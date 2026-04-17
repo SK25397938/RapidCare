@@ -534,6 +534,10 @@ let userLng = null;
 navigator.geolocation.getCurrentPosition(pos => {
     userLat = pos.coords.latitude;
     userLng = pos.coords.longitude;
+
+    if (map) {
+        map.setView([userLat, userLng], 13);
+    }
 });
         let map;
 let markers = [];
@@ -613,8 +617,15 @@ filtered.sort((a, b) => {
 
     return d1 - d2;
 });
-            filtered.forEach(h => {
-                let statusClass, statusText;
+            filtered.forEach((h, index) => {
+    let statusClass, statusText;
+
+    let distanceText = "Distance unavailable";
+
+    if (userLat && userLng) {
+        const d = getDistance(userLat, userLng, parseFloat(h.lat), parseFloat(h.lng));
+        distanceText = `${d.toFixed(1)} km away`;
+    }
                 const totalBeds = h.cardiac + h.neuro + h.surgical + h.neonatal + h.general;
                 let selectedType = document.getElementById('icu-type').value.toLowerCase();
 
@@ -648,13 +659,14 @@ const currentBeds = h[selectedType];
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <div class="card-header">
-                        <div>
-                            <div class="hospital-name">${h.name}</div>
-                            <div class="hospital-location">${h.location}</div>
-                        </div>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                    </div>
+    <div class="card-header">
+        <div>
+            ${index === 0 ? '<span style="color:green;font-size:12px;margin-bottom:4px;display:block;">⭐ Nearest</span>' : ''}
+            <div class="hospital-name">${h.name}</div>
+            <div class="hospital-location">${h.location} • ${distanceText}</div>
+        </div>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+    </div>
                     <div class="card-body">
                         <div class="tags">
                             ${h.specialization.split(',').map(s => `<span class="tag">${s}</span>`).join('')}

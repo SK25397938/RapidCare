@@ -225,7 +225,6 @@
             </form>
         </div>
 
-        <!-- ADMIN SECTION -->
         <div id="admin-section" class="hidden">
             <div class="form-header">
                 <h2>Admin Portal</h2>
@@ -308,9 +307,9 @@
         errorMsg.style.display = 'none';
         document.getElementById('admin-email').style.borderColor = 'var(--border)';
         localStorage.setItem("role", "admin");
+        localStorage.setItem("email", emailInput);
         window.location.href = "2.html";
     }
 </script>
-
 </body>
 </html>

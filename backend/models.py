@@ -7,6 +7,7 @@ class Hospital(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     location = Column(String)
+    admin_email = Column(String, unique=True)
 
     cardiac = Column(Integer)
     neuro = Column(Integer)
