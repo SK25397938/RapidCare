@@ -401,7 +401,6 @@
             }
         }
 
-        /* --- ANIMATIONS --- */
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
@@ -413,7 +412,6 @@
             50% { transform: translate(-50%, -110%); }
         }
 
-        /* Toast Notification */
         #toast {
             position: fixed;
             top: 20px;
@@ -429,9 +427,19 @@
             font-weight: 500;
         }
         #toast.show { transform: translateX(0); }
+        .nearest-hospital {
+    border: 2px solid #10b981;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    transform: scale(1.02);
+}
+.hidden-routing {
+    display: none;
+}
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 </head>
 <body>
 
@@ -550,7 +558,6 @@ function initMap() {
     }).addTo(map);
 }
 
-
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -564,6 +571,40 @@ function getDistance(lat1, lon1, lat2, lon2) {
         Math.sin(dLon / 2);
 
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+let routingControl = null;
+
+function drawRoute(hospital) {
+    if (!userLat || !userLng) return;
+
+    const lat1 = userLat;
+    const lng1 = userLng;
+    const lat2 = parseFloat(hospital.lat);
+    const lng2 = parseFloat(hospital.lng);
+
+    if (routingControl) {
+        map.removeControl(routingControl);
+    }
+
+    routingControl = L.Routing.control({
+    waypoints: [
+        L.latLng(lat1, lng1),
+        L.latLng(lat2, lng2)
+    ],
+    routeWhileDragging: false,
+    addWaypoints: false,
+    draggableWaypoints: false,
+    showAlternatives: false,
+    containerClassName: 'hidden-routing',
+    createMarker: () => null,
+    lineOptions: {
+        styles: [{ color: 'blue', weight: 5 }]
+    }
+}).addTo(map);
+
+    routingControl.on('routesfound', function() {
+        map.fitBounds(routingControl.getBounds(), { padding: [50, 50] });
+    });
 }
 
 async function loadHospitals() {
@@ -586,7 +627,7 @@ setInterval(loadHospitals, 3000);
             const container = document.getElementById('hospital-list');
             container.innerHTML = '';
 
-           const filtered = hospitals.filter(h => {
+          let filtered = hospitals.filter(h => {
     let match = false;
 
     if (filterType === 'All') match = true;
@@ -609,6 +650,17 @@ setInterval(loadHospitals, 3000);
 
     return distance <= 10;
 });
+if (filtered.length === 0 && userLat && userLng) {
+    filtered = [...hospitals];
+
+    filtered.sort((a, b) => {
+        const d1 = getDistance(userLat, userLng, parseFloat(a.lat), parseFloat(a.lng));
+        const d2 = getDistance(userLat, userLng, parseFloat(b.lat), parseFloat(b.lng));
+        return d1 - d2;
+    });
+
+    filtered = filtered.slice(0, 5);
+}
 filtered.sort((a, b) => {
     if (!userLat || !userLng) return 0;
 
@@ -657,7 +709,7 @@ const currentBeds = h[selectedType];
                 const trendIcon = predictedChange >= 0 ? '↗' : '↘';
 
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'card' + (index === 0 ? ' nearest-hospital' : '');
                 card.innerHTML = `
     <div class="card-header">
         <div>
@@ -693,6 +745,9 @@ const currentBeds = h[selectedType];
                 `;
                 container.appendChild(card);
             });
+            if (filtered.length > 0) {
+    drawRoute(filtered[0]);
+}
             updateMapMarkers(filtered);
         }
         
