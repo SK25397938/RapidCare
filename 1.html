@@ -562,9 +562,16 @@ navigator.geolocation.getCurrentPosition(pos => {
     userLat = pos.coords.latitude;
     userLng = pos.coords.longitude;
 
-    if (map) {
-        map.setView([userLat, userLng], 13);
-    }
+    const userIcon = L.icon({
+        iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        iconSize: [32, 32]
+    });
+
+    L.marker([userLat, userLng], { icon: userIcon })
+        .addTo(map)
+        .bindPopup("You are here");
+
+    map.setView([userLat, userLng], 13);
 });
         let map;
 let markers = [];
@@ -918,18 +925,14 @@ const currentBeds = h[selectedType];
             });
            if (filtered.length > 0) {
     const nearest = filtered[0];
-
-    map.setView(
-        [parseFloat(nearest.lat), parseFloat(nearest.lng)],
-        14
-    );
-
     drawRoute(nearest);
 }
             updateMapMarkers(filtered);
         }
         
-        function updateMapMarkers(hospitals) {
+        let firstLoad = true;
+
+function updateMapMarkers(hospitals) {
     markers.forEach(m => map.removeLayer(m));
     markers = [];
 
@@ -953,9 +956,10 @@ const currentBeds = h[selectedType];
         markers.push(marker);
     });
 
-    if (markers.length > 0) {
+    if (markers.length > 0 && firstLoad) {
         const group = L.featureGroup(markers);
         map.fitBounds(group.getBounds(), { padding: [50, 50] });
+        firstLoad = false;
     }
 }
 
