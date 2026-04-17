@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from backend.database import Base
+
 
 class Hospital(Base):
     __tablename__ = "hospitals"
@@ -21,3 +22,14 @@ class Hospital(Base):
     lat = Column(String)
     lng = Column(String)
     specialization = Column(String)
+
+
+class Patient(Base):
+    __tablename__ = "patients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hospital_id = Column(Integer, ForeignKey("hospitals.id"))
+    name = Column(String)
+    age = Column(String)
+    gender = Column(String)
+    ipd = Column(String)

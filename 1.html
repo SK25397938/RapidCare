@@ -388,7 +388,6 @@
             transition: width 1s linear;
         }
 
-        /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
             .search-grid {
                 grid-template-columns: 1fr;
@@ -411,6 +410,40 @@
             0%, 100% { transform: translate(-50%, -100%); }
             50% { transform: translate(-50%, -110%); }
         }
+
+        .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    width: 400px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#map {
+    z-index: 1;
+}
 
         #toast {
             position: fixed;
@@ -440,6 +473,7 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -530,6 +564,12 @@
     <div id="toast">Ambulance Dispatched!</div>
 
     <script>
+        let selectedHospitalId = null;
+
+function openForm(id) {
+    selectedHospitalId = id;
+    document.getElementById("patient-modal").style.display = "flex";
+}
         const role = localStorage.getItem("role");
 if (role !== "user") {
     window.location.href = "3.html";
@@ -558,6 +598,115 @@ function initMap() {
     }).addTo(map);
 }
 
+function closeModal() {
+    document.getElementById("patient-modal").style.display = "none";
+}
+
+async function submitForm() {
+    const name = document.getElementById("p-name").value;
+    const age = document.getElementById("p-age").value;
+    const gender = document.getElementById("p-gender").value;
+    const ipd = document.getElementById("p-ipd").value;
+
+    if (!name || !age) {
+        alert("Fill all details");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let y = 20;
+
+    doc.setFontSize(12);
+
+    doc.text("Patient Details / मरीज की जानकारी:", 20, y);
+    y += 10;
+
+    doc.text(`Name (नाम): ${name}`, 20, y);
+    y += 8;
+
+    doc.text(`Age (उम्र): ${age}`, 20, y);
+    y += 8;
+
+    doc.text(`Gender (लिंग): ${gender}`, 20, y);
+    y += 8;
+
+    doc.text(`IPD No. (पंजी. संख्या): ${ipd}`, 20, y);
+    y += 8;
+
+    const now = new Date();
+    doc.text(`Date (तारीख): ${now.toLocaleDateString()}`, 20, y);
+    y += 8;
+
+    doc.text(`Time (समय): ${now.toLocaleTimeString()}`, 20, y);
+    y += 10;
+
+    doc.setFontSize(11);
+    doc.text("Consent Statement / सहमति कथन:", 20, y);
+    y += 8;
+
+    doc.setFontSize(9);
+
+    const content = `
+We, the undersigned, have been clearly explained by the treating doctor/team regarding the serious and high-risk nature of the patient's condition and/or the treatment or surgery that has been advised. We understand the situation and give our informed consent.
+
+हमें उपचार कर रहे चिकित्सक/चिकित्सा टीम द्वारा मरीज की गंभीर स्थिति और उपचार के जोखिमों के बारे में बताया गया है।
+
+The treatment or surgery is essential due to the patient's critical condition.
+
+रोगी की गंभीर स्थिति के कारण उपचार आवश्यक है।
+
+We have been told about risks like infection, bleeding, organ failure, disability, ICU care or death.
+
+हमें संभावित जोखिमों के बारे में बताया गया है।
+
+We understand the risks and give our full informed consent.
+
+हम पूरी तरह से सूचित सहमति प्रदान करते हैं।
+`;
+
+    const lines = doc.splitTextToSize(content, 170);
+    doc.text(lines, 20, y);
+    y += lines.length * 5 + 10;
+
+    doc.setFontSize(10);
+
+    doc.text("Name of the Patient's Relative:", 20, y);
+    y += 10;
+
+    doc.text("Name of the Witness:", 20, y);
+    y += 10;
+
+    doc.text("Relationship with patient:", 20, y);
+    y += 10;
+
+    doc.text("Signature/Thumb impression:", 20, y);
+    y += 15;
+
+    doc.text("Signature/Thumb impression:", 20, y);
+    y += 10;
+
+    doc.text("Date: ____________", 20, y);
+    y += 8;
+
+    doc.text("Place: ____________", 20, y);
+
+    doc.save("patient_form.pdf");
+
+    await fetch("http://127.0.0.1:8000/add-patient", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            hospital_id: selectedHospitalId,
+            name, age, gender, ipd
+        })
+    });
+
+    document.getElementById("patient-modal").style.display = "none";
+
+    reserveBed(selectedHospitalId);
+}
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -735,7 +884,7 @@ const currentBeds = h[selectedType];
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-reserve" ${currentBeds === 0 ? 'disabled' : ''} onclick="reserveBed(${h.id})">
+                        <button class="btn btn-reserve" ${currentBeds === 0 ? 'disabled' : ''} onclick="openForm(${h.id})">
                             ${currentBeds === 0 ? 'Unavailable' : 'Reserve Bed (10 min Hold)'}
                         </button>
                         <button class="btn btn-ambulance" onclick="requestAmbulance('${h.name}')">
@@ -894,5 +1043,43 @@ await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${type}&change
     window.location.href = "3.html";
 }
     </script>
+   <div id="patient-modal" class="modal">
+    <div class="modal-content">
+
+        <span class="modal-close" onclick="closeModal()">✖</span>
+
+        <h3>Patient Details</h3>
+
+        <input id="p-name" placeholder="Patient Name" style="width:100%; margin-bottom:10px;">
+        <input id="p-age" placeholder="Age" style="width:100%; margin-bottom:10px;">
+        
+        <select id="p-gender" style="width:100%; margin-bottom:10px;">
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+        </select>
+
+        <input id="p-ipd" placeholder="IPD No" style="width:100%; margin-bottom:10px;">
+        
+        <button onclick="submitForm()">Submit & Generate PDF</button>
+
+    </div>
+</div>
+    
+    <h3>Patient Details</h3>
+
+    <input id="p-name" placeholder="Patient Name" style="width:100%; margin-bottom:10px;">
+    <input id="p-age" placeholder="Age" style="width:100%; margin-bottom:10px;">
+    
+    <select id="p-gender" style="width:100%; margin-bottom:10px;">
+        <option>Male</option>
+        <option>Female</option>
+        <option>Other</option>
+    </select>
+
+    <input id="p-ipd" placeholder="IPD No" style="width:100%; margin-bottom:10px;">
+    
+    <button onclick="submitForm()">Submit & Generate PDF</button>
+</div>
 </body>
 </html>

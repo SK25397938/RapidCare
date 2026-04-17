@@ -227,6 +227,36 @@
             .icu-grid { grid-template-columns: 1fr 1fr; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
         }
+
+        .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    width: 400px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+}
     </style>
 </head>
 <body>
@@ -276,11 +306,26 @@
     </div>
 
     <div class="dashboard-layout">
-        <div class="hospital-list" id="hospital-container">
-            
-        </div>
 
-        <div class="sidebar">
+    <div class="hospital-list">
+        <div id="hospital-container"></div>
+
+        <h3 style="margin-top:20px;">Active Patients</h3>
+
+        <table id="patient-table" style="width:100%; margin-top:10px; background:white; border-radius:10px;">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>IPD</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="sidebar">
             <div class="panel">
                 <h2>🚑 Ambulance Fleet</h2>
                 <div id="ambulance-controls"></div>
@@ -300,11 +345,20 @@
 if (role !== "admin") {
     window.location.href = "3.html";
 }
-   let hospitals = [];
-   const email = localStorage.getItem("email");
 
+const email = localStorage.getItem("email");
 if (!email) {
     window.location.href = "3.html";
+}
+
+let hospitals = [];
+    async function discharge(id) {
+    await fetch(`http://127.0.0.1:8000/patient/${id}`, {
+        method: "DELETE"
+    });
+
+    loadPatients();
+    loadHospitals();
 }
 
 async function loadHospitals() {
@@ -322,8 +376,28 @@ async function loadHospitals() {
     calculateStats();
 }
 
+async function loadPatients() {
+    const res = await fetch(`http://127.0.0.1:8000/patients?email=${email}`);
+    const data = await res.json();
+
+    const tbody = document.querySelector("#patient-table tbody");
+    tbody.innerHTML = "";
+
+    data.forEach(p => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${p.name}</td>
+            <td>${p.age}</td>
+            <td>${p.ipd}</td>
+            <td><button onclick="discharge(${p.id})">Discharge</button></td>
+        </tr>`;
+    });
+}
+
 loadHospitals();
 setInterval(loadHospitals, 3000);
+loadPatients();
+setInterval(loadPatients, 3000);
 
     const feedContainer = document.getElementById('activity-feed');
 
@@ -477,7 +551,7 @@ for (const [type, count] of Object.entries(icuTypes))   {
 }
 
     document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById("admin-email").innerText = email;
+    document.getElementById("admin-email").innerText = "Admin: " + email;
 
     renderHospitals();
     renderAmbulances();
@@ -489,6 +563,38 @@ for (const [type, count] of Object.entries(icuTypes))   {
     localStorage.removeItem("email");
     window.location.href = "3.html";
 }
+let selectedHospitalId = null;
+
+function openForm(id) {
+    selectedHospitalId = id;
+    document.getElementById("patient-modal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("patient-modal").style.display = "none";
+}
 </script>
+<div id="patient-modal" class="modal">
+    <div class="modal-content">
+
+        <span class="modal-close" onclick="closeModal()">✖</span>
+
+        <h3>Patient Details</h3>
+
+        <input id="p-name" placeholder="Patient Name" style="width:100%; margin-bottom:10px;">
+        <input id="p-age" placeholder="Age" style="width:100%; margin-bottom:10px;">
+        
+        <select id="p-gender" style="width:100%; margin-bottom:10px;">
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+        </select>
+
+        <input id="p-ipd" placeholder="IPD No" style="width:100%; margin-bottom:10px;">
+
+        <button onclick="submitForm()">Submit</button>
+
+    </div>
+</div>
 </body>
 </html>

@@ -3,6 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal, engine
 import backend.models as models
+from pydantic import BaseModel
+
+class PatientCreate(BaseModel):
+    hospital_id: int
+    name: str
+    age: str
+    gender: str
+    ipd: str
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -105,3 +113,29 @@ def get_admin_hospital(email: str, db: Session = Depends(get_db)):
         return {"error": "Not found"}
 
     return hospital
+
+@app.post("/add-patient")
+def add_patient(data: PatientCreate, db: Session = Depends(get_db)):
+    patient = models.Patient(**data.dict())
+    db.add(patient)
+    db.commit()
+    return {"success": True}
+
+@app.delete("/patient/{id}")
+def delete_patient(id: int, db: Session = Depends(get_db)):
+    p = db.query(models.Patient).filter(models.Patient.id == id).first()
+    if p:
+        db.delete(p)
+        db.commit()
+    return {"success": True}
+
+@app.get("/patients")
+def get_patients(email: str, db: Session = Depends(get_db)):
+    hospital = db.query(models.Hospital).filter(models.Hospital.admin_email == email).first()
+
+    if not hospital:
+        return []
+
+    patients = db.query(models.Patient).filter(models.Patient.hospital_id == hospital.id).all()
+
+    return patients
