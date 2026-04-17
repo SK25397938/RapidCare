@@ -613,86 +613,93 @@ async function submitForm() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+   const { jsPDF } = window.jspdf;
+const doc = new jsPDF();
 
-    let y = 20;
+let y = 20;
 
-    doc.setFontSize(12);
+doc.setFont("helvetica");
+doc.setFontSize(14);
 
-    doc.text("Patient Details / मरीज की जानकारी:", 20, y);
-    y += 10;
+doc.text("PATIENT CONSENT FORM", 20, y);
+y += 10;
 
-    doc.text(`Name (नाम): ${name}`, 20, y);
-    y += 8;
+doc.setFontSize(11);
 
-    doc.text(`Age (उम्र): ${age}`, 20, y);
-    y += 8;
+doc.text(`Name: ${name}`, 20, y);
+doc.line(50, y + 1, 180, y + 1);
+y += 10;
 
-    doc.text(`Gender (लिंग): ${gender}`, 20, y);
-    y += 8;
+doc.text(`Age: ${age}`, 20, y);
+doc.line(35, y + 1, 80, y + 1);
 
-    doc.text(`IPD No. (पंजी. संख्या): ${ipd}`, 20, y);
-    y += 8;
+doc.text(`Gender: ${gender}`, 100, y);
+doc.line(130, y + 1, 180, y + 1);
+y += 10;
 
-    const now = new Date();
-    doc.text(`Date (तारीख): ${now.toLocaleDateString()}`, 20, y);
-    y += 8;
+doc.text(`IPD Number: ${ipd}`, 20, y);
+doc.line(60, y + 1, 180, y + 1);
+y += 10;
 
-    doc.text(`Time (समय): ${now.toLocaleTimeString()}`, 20, y);
-    y += 10;
+const now = new Date();
 
-    doc.setFontSize(11);
-    doc.text("Consent Statement / सहमति कथन:", 20, y);
-    y += 8;
+doc.text(`Date: ${now.toLocaleDateString()}`, 20, y);
+doc.text(`Time: ${now.toLocaleTimeString()}`, 110, y);
+y += 15;
 
-    doc.setFontSize(9);
+doc.setFontSize(12);
+doc.text("Consent Statement:", 20, y);
+y += 8;
 
-    const content = `
-We, the undersigned, have been clearly explained by the treating doctor/team regarding the serious and high-risk nature of the patient's condition and/or the treatment or surgery that has been advised. We understand the situation and give our informed consent.
+doc.setFontSize(10);
 
-हमें उपचार कर रहे चिकित्सक/चिकित्सा टीम द्वारा मरीज की गंभीर स्थिति और उपचार के जोखिमों के बारे में बताया गया है।
+const content = `
+We, the undersigned, have been clearly informed by the treating doctor or medical team about the serious and high-risk nature of the patient’s condition and the proposed treatment or surgery.
 
-The treatment or surgery is essential due to the patient's critical condition.
+We understand that the treatment or surgical procedure is essential due to the critical condition of the patient.
 
-रोगी की गंभीर स्थिति के कारण उपचार आवश्यक है।
+We have been informed about potential risks which may include severe infection, heavy bleeding, organ failure (lungs, kidneys, heart), temporary or permanent disability, adverse drug reactions, need for ICU care or life support, and even death despite all efforts.
 
-We have been told about risks like infection, bleeding, organ failure, disability, ICU care or death.
+We have also been informed about alternative treatment options, including the option of no treatment, along with associated risks.
 
-हमें संभावित जोखिमों के बारे में बताया गया है।
+We have had the opportunity to ask questions, and all our doubts have been satisfactorily clarified.
 
-We understand the risks and give our full informed consent.
-
-हम पूरी तरह से सूचित सहमति प्रदान करते हैं।
+We fully understand the risks involved and voluntarily give our informed consent to proceed with the treatment.
 `;
 
-    const lines = doc.splitTextToSize(content, 170);
-    doc.text(lines, 20, y);
-    y += lines.length * 5 + 10;
+const lines = doc.splitTextToSize(content, 170);
+doc.text(lines, 20, y);
+y += lines.length * 6 + 15;
 
-    doc.setFontSize(10);
+// Signature Section
+doc.setFontSize(11);
 
-    doc.text("Name of the Patient's Relative:", 20, y);
-    y += 10;
+doc.text("Name of Patient's Relative:", 20, y);
+doc.line(80, y + 1, 180, y + 1);
+y += 12;
 
-    doc.text("Name of the Witness:", 20, y);
-    y += 10;
+doc.text("Name of Witness:", 20, y);
+doc.line(80, y + 1, 180, y + 1);
+y += 12;
 
-    doc.text("Relationship with patient:", 20, y);
-    y += 10;
+doc.text("Relationship with Patient:", 20, y);
+doc.line(80, y + 1, 180, y + 1);
+y += 12;
 
-    doc.text("Signature/Thumb impression:", 20, y);
-    y += 15;
+doc.text("Signature (Relative):", 20, y);
+doc.line(80, y + 1, 140, y + 1);
 
-    doc.text("Signature/Thumb impression:", 20, y);
-    y += 10;
+doc.text("Signature (Witness):", 150, y);
+doc.line(190, y + 1, 200, y + 1);
+y += 12;
 
-    doc.text("Date: ____________", 20, y);
-    y += 8;
+doc.text("Date:", 20, y);
+doc.line(35, y + 1, 90, y + 1);
 
-    doc.text("Place: ____________", 20, y);
+doc.text("Place:", 110, y);
+doc.line(130, y + 1, 180, y + 1);
 
-    doc.save("patient_form.pdf");
+doc.save("patient_form.pdf");
 
     await fetch("http://127.0.0.1:8000/add-patient", {
         method: "POST",

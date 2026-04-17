@@ -39,6 +39,8 @@
         .brand h1 { font-size: 1.25rem; color: var(--primary); font-weight: 700; }
         .brand span { color: var(--accent); font-weight: 400; }
 
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+
         .status-badge {
             display: flex;
             align-items: center;
@@ -64,6 +66,19 @@
             70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
+
+        .btn-logout {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-main);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: #f8fafc; border-color: #cbd5e1; }
 
         main { max-width: 1400px; margin: 2rem auto; padding: 0 1.5rem; }
 
@@ -147,8 +162,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.1s;
         }
+        .btn-circle:active { transform: scale(0.95); }
         .btn-circle:hover { opacity: 0.8; }
         .btn-minus { background: #fee2e2; color: var(--danger); }
         .btn-plus { background: #dcfce7; color: var(--success); }
@@ -217,6 +233,132 @@
         .feed-content { flex: 1; }
         .feed-time { font-size: 0.75rem; color: var(--text-light); display: block; margin-top: 2px; }
 
+        .patient-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            background: var(--card-bg);
+        }
+
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .patient-table th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            background-color: #f8fafc;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .patient-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .patient-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .patient-table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .btn-discharge {
+            padding: 6px 12px;
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-discharge:hover {
+            background-color: #fecaca;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text-light);
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: var(--danger); }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.4rem; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-submit:hover { background-color: #2563eb; }
+
         @media (max-width: 1024px) {
             .dashboard-layout { grid-template-columns: 1fr; }
             .sidebar { flex-direction: row; flex-wrap: wrap; }
@@ -227,54 +369,24 @@
             .icu-grid { grid-template-columns: 1fr 1fr; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
         }
-
-        .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
-
-.modal-content {
-    background: white;
-    padding: 20px;
-    width: 400px;
-    border-radius: 10px;
-    position: relative;
-}
-
-.modal-close {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-}
     </style>
 </head>
 <body>
 
 <header>
-    <div id="admin-email" style="font-size:12px; color:gray;">
-    Admin:
-</div>
+    <div id="admin-email" style="font-size: 0.875rem; color: var(--text-light); font-weight: 500;">
+        Admin: <span id="email-display"></span>
+    </div>
     <div class="brand">
         <h1>RapidCare <span>Admin</span></h1>
     </div>
-    <div class="status-badge">
-        <div class="status-dot"></div>
-        Live System
+    <div class="header-controls">
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            Live System
+        </div>
+        <button onclick="logout()" class="btn-logout">Logout</button>
     </div>
-    <button onclick="logout()" style="margin-left:20px; padding:6px 12px; cursor:pointer;">
-    Logout
-</button>
 </header>
 
 <main>
@@ -307,25 +419,28 @@
 
     <div class="dashboard-layout">
 
-    <div class="hospital-list">
-        <div id="hospital-container"></div>
+        <div class="hospital-list">
+            <div id="hospital-container"></div>
 
-        <h3 style="margin-top:20px;">Active Patients</h3>
+            <h3 style="margin-top: 1.5rem; color: var(--primary);">Active Patients</h3>
+            
+            <div class="patient-table-wrapper" style="margin-top: 1rem;">
+                <table id="patient-table" class="patient-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>IPD Number</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-        <table id="patient-table" style="width:100%; margin-top:10px; background:white; border-radius:10px;">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>IPD</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div class="sidebar">
+        <div class="sidebar">
             <div class="panel">
                 <h2>🚑 Ambulance Fleet</h2>
                 <div id="ambulance-controls"></div>
@@ -340,64 +455,111 @@
     </div>
 </main>
 
+<div id="patient-modal" class="modal">
+    <div class="modal-content" style="position:relative;">
+        <span class="modal-close" onclick="closeModal()">✖</span>
+        <h3 style="margin-bottom: 1.5rem; color: var(--primary);">Add Patient Details</h3>
+        
+        <div class="form-group">
+            <input id="p-name" placeholder="Patient Name">
+        </div>
+        <div class="form-group">
+            <input id="p-age" placeholder="Age" type="number">
+        </div>
+        <div class="form-group">
+            <select id="p-gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input id="p-ipd" placeholder="IPD No">
+        </div>
+
+        <button onclick="submitForm()" class="btn-submit">Submit Patient</button>
+    </div>
+</div>
+
 <script>
     const role = localStorage.getItem("role");
-if (role !== "admin") {
-    window.location.href = "3.html";
-}
-
-const email = localStorage.getItem("email");
-if (!email) {
-    window.location.href = "3.html";
-}
-
-let hospitals = [];
-    async function discharge(id) {
-    await fetch(`http://127.0.0.1:8000/patient/${id}`, {
-        method: "DELETE"
-    });
-
-    loadPatients();
-    loadHospitals();
-}
-
-async function loadHospitals() {
-    const res = await fetch(`http://127.0.0.1:8000/admin-hospital?email=${email}`);
-    const data = await res.json();
-
-    if (!data || data.error) {
-        hospitals = [];
-    } else {
-        hospitals = [data];
+    if (role !== "admin") {
+        window.location.href = "3.html";
     }
 
-    renderHospitals();
-    renderAmbulances();
-    calculateStats();
-}
+    const email = localStorage.getItem("email");
+    if (!email) {
+        window.location.href = "3.html";
+    } else {
+        document.getElementById("email-display").innerText = email;
+    }
 
-async function loadPatients() {
-    const res = await fetch(`http://127.0.0.1:8000/patients?email=${email}`);
-    const data = await res.json();
+    let hospitals = [];
 
-    const tbody = document.querySelector("#patient-table tbody");
-    tbody.innerHTML = "";
+    async function discharge(id) {
+        if(!confirm("Are you sure you want to discharge this patient?")) return;
 
-    data.forEach(p => {
-        tbody.innerHTML += `
-        <tr>
-            <td>${p.name}</td>
-            <td>${p.age}</td>
-            <td>${p.ipd}</td>
-            <td><button onclick="discharge(${p.id})">Discharge</button></td>
-        </tr>`;
-    });
-}
+        await fetch(`http://127.0.0.1:8000/patient/${id}`, {
+            method: "DELETE"
+        });
 
-loadHospitals();
-setInterval(loadHospitals, 3000);
-loadPatients();
-setInterval(loadPatients, 3000);
+        logActivity(`Patient ID ${id} discharged`, 'success');
+        loadPatients();
+        loadHospitals();
+    }
+
+    async function loadHospitals() {
+        try {
+            const res = await fetch(`http://127.0.0.1:8000/admin-hospital?email=${email}`);
+            const data = await res.json();
+
+            if (!data || data.error) {
+                hospitals = [];
+            } else {
+                hospitals = [data];
+            }
+            renderHospitals();
+            renderAmbulances();
+            calculateStats();
+        } catch (e) {
+            console.error("Error loading hospitals:", e);
+        }
+    }
+
+    async function loadPatients() {
+        try {
+            const res = await fetch(`http://127.0.0.1:8000/patients?email=${email}`);
+            const data = await res.json();
+
+            const tbody = document.querySelector("#patient-table tbody");
+            tbody.innerHTML = "";
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 2rem; color: var(--text-light);">No active patients found.</td></tr>`;
+                return;
+            }
+
+            data.forEach(p => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight:500;">${p.name}</td>
+                    <td>${p.age}</td>
+                    <td style="font-family:monospace; color: var(--text-light);">${p.ipd}</td>
+                    <td>
+                        <button class="btn-discharge" onclick="discharge(${p.id})">Discharge</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        } catch (e) {
+            console.error("Error loading patients:", e);
+        }
+    }
+
+    loadHospitals();
+    setInterval(loadHospitals, 3000);
+    loadPatients();
+    setInterval(loadPatients, 3000);
 
     const feedContainer = document.getElementById('activity-feed');
 
@@ -432,8 +594,8 @@ setInterval(loadPatients, 3000);
         let occupiedBeds = 0;
 
         hospitals.forEach(h => {
-            const hTotal =[h.cardiac, h.neuro, h.surgical, h.neonatal, h.general].reduce((a, b) => a + b, 0);
-            const hOccupied = Math.floor(hTotal * 0.75); 
+            const hTotal = [h.cardiac, h.neuro, h.surgical, h.neonatal, h.general].reduce((a, b) => a + b, 0);
+            const hOccupied = Math.floor(hTotal * 0.75);
             const hAvail = hTotal - hOccupied;
 
             totalBeds += hTotal;
@@ -458,7 +620,7 @@ setInterval(loadPatients, 3000);
         hospitals.forEach(h => {
             const totalCapacity = h.cardiac + h.neuro + h.surgical + h.neonatal + h.general;
             const currentOccupied = Math.floor(totalCapacity * 0.6); 
-            const occupancyRate = Math.round((currentOccupied / totalCapacity) * 100);
+            const occupancyRate = totalCapacity > 0 ? Math.round((currentOccupied / totalCapacity) * 100) : 0;
             
             let barColor = 'var(--success)';
             if (occupancyRate > 50) barColor = 'var(--warning)';
@@ -467,19 +629,19 @@ setInterval(loadPatients, 3000);
             const card = document.createElement('div');
             card.className = 'hospital-card';
 
-            let icuRows = '';
-          const icuTypes = {
-    cardiac: h.cardiac,
-    neuro: h.neuro,
-    surgical: h.surgical,
-    neonatal: h.neonatal,
-    general: h.general
-};
+            const icuTypes = {
+                cardiac: h.cardiac,
+                neuro: h.neuro,
+                surgical: h.surgical,
+                neonatal: h.neonatal,
+                general: h.general
+            };
 
-for (const [type, count] of Object.entries(icuTypes))   {
+            let icuRows = '';
+            for (const [type, count] of Object.entries(icuTypes)) {
                 icuRows += `
                     <div class="icu-control">
-                        <div class="icu-label">${type} ICU</div>
+                        <div class="icu-label">${type.charAt(0).toUpperCase() + type.slice(1)} ICU</div>
                         <div class="control-row">
                             <button class="btn-circle btn-minus" onclick="updateBed(${h.id}, '${type}', -1)">-</button>
                             <span class="bed-count">${count}</span>
@@ -535,66 +697,78 @@ for (const [type, count] of Object.entries(icuTypes))   {
     }
 
     async function updateBed(hid, type, delta) {
-    await fetch(`http://127.0.0.1:8000/update-bed/${hid}?type=${type.toLowerCase()}&change=${delta}`, {
-        method: "POST"
-    });
-
-    loadHospitals();
-}
+        try {
+            await fetch(`http://127.0.0.1:8000/update-bed/${hid}?type=${type.toLowerCase()}&change=${delta}`, {
+                method: "POST"
+            });
+            loadHospitals();
+        } catch(e) {
+            console.error("Update failed", e);
+        }
+    }
 
     async function updateAmbulance(hid, delta) {
-    await fetch(`http://127.0.0.1:8000/update-ambulance/${hid}?change=${delta}`, {
-        method: "POST"
-    });
-
-    loadHospitals();
-}
+        try {
+            await fetch(`http://127.0.0.1:8000/update-ambulance/${hid}?change=${delta}`, {
+                method: "POST"
+            });
+            loadHospitals();
+        } catch(e) {
+            console.error("Update failed", e);
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById("admin-email").innerText = "Admin: " + email;
+        renderHospitals();
+        renderAmbulances();
+        calculateStats();
+        logActivity('System Dashboard Initialized', 'info');
+    });
 
-    renderHospitals();
-    renderAmbulances();
-    calculateStats();
-    logActivity('System Dashboard Initialized', 'info');
-});
     function logout() {
-    localStorage.removeItem("role");
-    localStorage.removeItem("email");
-    window.location.href = "3.html";
-}
-let selectedHospitalId = null;
+        localStorage.removeItem("role");
+        localStorage.removeItem("email");
+        window.location.href = "3.html";
+    }
 
-function openForm(id) {
-    selectedHospitalId = id;
-    document.getElementById("patient-modal").style.display = "flex";
-}
+    let selectedHospitalId = null;
 
-function closeModal() {
-    document.getElementById("patient-modal").style.display = "none";
-}
-</script>
-<div id="patient-modal" class="modal">
-    <div class="modal-content">
+    function openForm(id) {
+        selectedHospitalId = id;
+        document.getElementById("patient-modal").style.display = "flex";
+    }
 
-        <span class="modal-close" onclick="closeModal()">✖</span>
+    function closeModal() {
+        document.getElementById("patient-modal").style.display = "none";
+    }
 
-        <h3>Patient Details</h3>
-
-        <input id="p-name" placeholder="Patient Name" style="width:100%; margin-bottom:10px;">
-        <input id="p-age" placeholder="Age" style="width:100%; margin-bottom:10px;">
+    function submitForm() {
+        const name = document.getElementById("p-name").value;
+        const age = document.getElementById("p-age").value;
+        const ipd = document.getElementById("p-ipd").value;
         
-        <select id="p-gender" style="width:100%; margin-bottom:10px;">
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-        </select>
+        if(!name || !age || !ipd) {
+            alert("Please fill all fields");
+            return;
+        }
 
-        <input id="p-ipd" placeholder="IPD No" style="width:100%; margin-bottom:10px;">
+        logActivity(`New patient ${name} added manually`, 'info');
+        closeModal();
+        
+        document.getElementById("p-name").value = "";
+        document.getElementById("p-age").value = "";
+        document.getElementById("p-ipd").value = "";
+        
+        loadPatients();
+    }
 
-        <button onclick="submitForm()">Submit</button>
+    window.onclick = function(event) {
+        const modal = document.getElementById('patient-modal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
 
-    </div>
-</div>
 </body>
 </html>
