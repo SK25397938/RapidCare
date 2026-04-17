@@ -35,7 +35,6 @@
             padding-bottom: 2rem;
         }
 
-        /* --- HEADER --- */
         header {
             background-color: var(--bg-card);
             padding: 1rem 1.5rem;
@@ -80,27 +79,12 @@
             letter-spacing: 0.5px;
         }
 
-        .emergency-badge {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 0.5rem 1rem;
-            border-radius: 99px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            animation: pulse-red 2s infinite;
-        }
-
-        /* --- MAIN CONTAINER --- */
         main {
             max-width: 1200px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
 
-        /* --- EMERGENCY INPUT SECTION --- */
         .search-panel {
             background: var(--bg-card);
             padding: 1.5rem;
@@ -188,11 +172,10 @@
 
         .ambulance-marker {
             color: var(--danger);
-            transition: all 2s linear; /* Smooth movement simulation */
+            transition: all 2s linear;
             z-index: 10;
         }
 
-        /* --- HOSPITAL GRID --- */
         .hospital-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -321,7 +304,6 @@
         }
         .btn-ambulance:hover { background: #fef2f2; }
 
-        /* --- BOOKING PANEL --- */
         .booking-panel {
             position: fixed;
             bottom: 2rem;
@@ -412,38 +394,38 @@
         }
 
         .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
 
-.modal-content {
-    background: white;
-    padding: 20px;
-    width: 400px;
-    border-radius: 10px;
-    position: relative;
-}
+        .modal-content {
+            background: white;
+            padding: 20px;
+            width: 400px;
+            border-radius: 10px;
+            position: relative;
+        }
 
-.modal-close {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-}
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+        }
 
-#map {
-    z-index: 1;
-}
+        #map {
+            z-index: 1;
+        }
 
         #toast {
             position: fixed;
@@ -461,19 +443,19 @@
         }
         #toast.show { transform: translateX(0); }
         .nearest-hospital {
-    border: 2px solid #10b981;
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
-    transform: scale(1.02);
-}
-.hidden-routing {
-    display: none;
-}
+            border: 2px solid #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+            transform: scale(1.02);
+        }
+        .hidden-routing {
+            display: none;
+        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -484,9 +466,6 @@
                 <h1>RapidCare</h1>
                 <p>Find ICU Care Instantly</p>
             </div>
-        </div>
-        <div class="emergency-badge">
-            <span>🚨 Emergency Mode Active</span>
         </div>
         <button onclick="logout()" style="margin-left:20px; padding:6px 12px; cursor:pointer;">
          Logout
@@ -591,7 +570,7 @@ navigator.geolocation.getCurrentPosition(pos => {
 let markers = [];
 
 function initMap() {
-    map = L.map('map').setView([19.0760, 72.8777], 11); // Mumbai
+    map = L.map('map').setView([19.0760, 72.8777], 11); 
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: ''
@@ -606,9 +585,9 @@ async function submitForm() {
     const name = document.getElementById("p-name").value;
     const age = document.getElementById("p-age").value;
     const gender = document.getElementById("p-gender").value;
-    const ipd = document.getElementById("p-ipd").value;
+    const phone = document.getElementById("p-phone").value;
 
-    if (!name || !age) {
+    if (!name || !age || !phone) {
         alert("Fill all details");
         return;
     }
@@ -616,97 +595,133 @@ async function submitForm() {
    const { jsPDF } = window.jspdf;
 const doc = new jsPDF();
 
-let y = 20;
+const pageWidth = doc.internal.pageSize.getWidth();
+const margin = 20;
+const contentWidth = pageWidth - (margin * 2);
+let yPos = 20;
 
-doc.setFont("helvetica");
-doc.setFontSize(14);
+doc.setFont("helvetica", "bold");
+doc.setFontSize(18);
+doc.setTextColor(0, 51, 102);
+doc.text("PATIENT CONSENT FORM", pageWidth / 2, yPos, { align: "center" });
+yPos += 15;
 
-doc.text("PATIENT CONSENT FORM", 20, y);
-y += 10;
+doc.setLineWidth(0.5);
+doc.setDrawColor(200, 200, 200);
+doc.line(margin, yPos, pageWidth - margin, yPos);
+yPos += 10;
 
 doc.setFontSize(11);
+doc.setTextColor(0, 0, 0);
 
-doc.text(`Name: ${name}`, 20, y);
-doc.line(50, y + 1, 180, y + 1);
-y += 10;
+const col1X = margin;
+const col2X = 80;
+const col3X = 120;
+const col4X = 160;
 
-doc.text(`Age: ${age}`, 20, y);
-doc.line(35, y + 1, 80, y + 1);
+doc.setFont("helvetica", "bold");
+doc.text("Patient Name:", col1X, yPos);
+doc.setFont("helvetica", "normal");
+doc.text(name, col1X + 45, yPos);
+doc.line(col1X + 45, yPos + 1, col2X + 60, yPos + 1);
 
-doc.text(`Gender: ${gender}`, 100, y);
-doc.line(130, y + 1, 180, y + 1);
-y += 10;
+doc.setFont("helvetica", "bold");
+doc.text("Age:", col3X, yPos);
+doc.setFont("helvetica", "normal");
+doc.text(age, col3X + 15, yPos);
+doc.line(col3X + 15, yPos + 1, col4X, yPos + 1);
+yPos += 10;
 
-doc.text(`IPD Number: ${ipd}`, 20, y);
-doc.line(60, y + 1, 180, y + 1);
-y += 10;
+doc.setFont("helvetica", "bold");
+doc.text("Gender:", col1X, yPos);
+doc.setFont("helvetica", "normal");
+doc.text(gender, col1X + 45, yPos);
+doc.line(col1X + 45, yPos + 1, col2X + 60, yPos + 1);
+
+doc.setFont("helvetica", "bold");
+doc.text("Phone Number:", col3X, yPos);
+doc.setFont("helvetica", "normal");
+doc.text(phone, col3X + 30, yPos);
+doc.line(col3X + 30, yPos + 1, pageWidth - margin, yPos + 1);
+yPos += 10;
 
 const now = new Date();
+doc.setFont("helvetica", "bold");
+doc.text("Date:", col1X, yPos);
+doc.setFont("helvetica", "normal");
+doc.text(now.toLocaleDateString(), col1X + 20, yPos);
+doc.line(col1X + 20, yPos + 1, col2X + 20, yPos + 1);
 
-doc.text(`Date: ${now.toLocaleDateString()}`, 20, y);
-doc.text(`Time: ${now.toLocaleTimeString()}`, 110, y);
-y += 15;
+doc.setFont("helvetica", "bold");
+doc.text("Time:", col3X, yPos);
+doc.setFont("helvetica", "normal");
+doc.text(now.toLocaleTimeString(), col3X + 20, yPos);
+doc.line(col3X + 20, yPos + 1, pageWidth - margin, yPos + 1);
+yPos += 15;
 
+doc.setFont("helvetica", "bold");
 doc.setFontSize(12);
-doc.text("Consent Statement:", 20, y);
-y += 8;
+doc.setTextColor(0, 51, 102);
+doc.text("CONSENT STATEMENT", margin, yPos);
+yPos += 8;
 
+doc.setFont("helvetica", "normal");
 doc.setFontSize(10);
+doc.setTextColor(0, 0, 0);
 
-const content = `
-We, the undersigned, have been clearly informed by the treating doctor or medical team about the serious and high-risk nature of the patient’s condition and the proposed treatment or surgery.
+const consentText = `I, the undersigned, hereby certify that I am the patient's relative/guardian. I have been clearly informed by the treating doctor or medical team about the serious and high-risk nature of the patient's condition and the proposed treatment or surgery.
 
-We understand that the treatment or surgical procedure is essential due to the critical condition of the patient.
+I understand that the treatment or surgical procedure is essential due to the critical condition of the patient.
 
-We have been informed about potential risks which may include severe infection, heavy bleeding, organ failure (lungs, kidneys, heart), temporary or permanent disability, adverse drug reactions, need for ICU care or life support, and even death despite all efforts.
+I have been informed about potential risks which may include severe infection, heavy bleeding, organ failure (lungs, kidneys, heart), temporary or permanent disability, adverse drug reactions, need for ICU care or life support, and even death despite all efforts.
 
-We have also been informed about alternative treatment options, including the option of no treatment, along with associated risks.
+I have also been informed about alternative treatment options, including the option of no treatment, along with associated risks.
 
-We have had the opportunity to ask questions, and all our doubts have been satisfactorily clarified.
+I have had the opportunity to ask questions, and all my doubts have been satisfactorily clarified. I fully understand the risks involved and voluntarily give my informed consent to proceed with the treatment.`;
 
-We fully understand the risks involved and voluntarily give our informed consent to proceed with the treatment.
-`;
+const splitText = doc.splitTextToSize(consentText, contentWidth);
+doc.text(splitText, margin, yPos);
+yPos += (splitText.length * 4.5) + 15;
 
-const lines = doc.splitTextToSize(content, 170);
-doc.text(lines, 20, y);
-y += lines.length * 6 + 15;
-
-// Signature Section
+doc.setFont("helvetica", "bold");
 doc.setFontSize(11);
+doc.text("SIGNATURES", margin, yPos);
+yPos += 10;
 
-doc.text("Name of Patient's Relative:", 20, y);
-doc.line(80, y + 1, 180, y + 1);
-y += 12;
+doc.setFont("helvetica", "normal");
+doc.setFontSize(10);
+const sigStartY = yPos;
 
-doc.text("Name of Witness:", 20, y);
-doc.line(80, y + 1, 180, y + 1);
-y += 12;
+doc.text("Name of Relative:", margin, sigStartY);
+doc.line(margin + 45, sigStartY + 1, pageWidth - margin, sigStartY + 1);
 
-doc.text("Relationship with Patient:", 20, y);
-doc.line(80, y + 1, 180, y + 1);
-y += 12;
+doc.text("Name of Witness:", margin, sigStartY + 10);
+doc.line(margin + 45, sigStartY + 11, pageWidth - margin, sigStartY + 11);
 
-doc.text("Signature (Relative):", 20, y);
-doc.line(80, y + 1, 140, y + 1);
+doc.text("Relationship:", margin, sigStartY + 20);
+doc.line(margin + 45, sigStartY + 21, pageWidth - margin, sigStartY + 21);
 
-doc.text("Signature (Witness):", 150, y);
-doc.line(190, y + 1, 200, y + 1);
-y += 12;
+doc.setFont("helvetica", "bold");
+doc.text("Signature (Relative):", margin, sigStartY + 35);
+doc.line(margin + 55, sigStartY + 36, margin + 90, sigStartY + 36);
 
-doc.text("Date:", 20, y);
-doc.line(35, y + 1, 90, y + 1);
+doc.text("Signature (Witness):", margin + 100, sigStartY + 35);
+doc.line(margin + 155, sigStartY + 36, pageWidth - margin, sigStartY + 36);
 
-doc.text("Place:", 110, y);
-doc.line(130, y + 1, 180, y + 1);
+doc.text("Date:", margin, sigStartY + 45);
+doc.line(margin + 20, sigStartY + 46, margin + 70, sigStartY + 46);
 
-doc.save("patient_form.pdf");
+doc.text("Place:", margin + 100, sigStartY + 45);
+doc.line(margin + 120, sigStartY + 46, pageWidth - margin, sigStartY + 46);
+
+doc.save("patient_consent_form.pdf");
 
     await fetch("http://127.0.0.1:8000/add-patient", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             hospital_id: selectedHospitalId,
-            name, age, gender, ipd
+            name, age, gender, phone, email: localStorage.getItem("email")
         })
     });
 
@@ -901,8 +916,15 @@ const currentBeds = h[selectedType];
                 `;
                 container.appendChild(card);
             });
-            if (filtered.length > 0) {
-    drawRoute(filtered[0]);
+           if (filtered.length > 0) {
+    const nearest = filtered[0];
+
+    map.setView(
+        [parseFloat(nearest.lat), parseFloat(nearest.lng)],
+        14
+    );
+
+    drawRoute(nearest);
 }
             updateMapMarkers(filtered);
         }
@@ -911,22 +933,30 @@ const currentBeds = h[selectedType];
     markers.forEach(m => map.removeLayer(m));
     markers = [];
 
-    hospitals.forEach(h => {
+    hospitals.forEach((h, index) => {
         if (!h.lat || !h.lng) return;
 
-        const marker = L.marker([parseFloat(h.lat), parseFloat(h.lng)])
-            .addTo(map)
-            .bindPopup(`<b>${h.name}</b><br>${h.location}`);
+        const icon = L.icon({
+            iconUrl: index === 0
+                ? "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                : "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            iconSize: [32, 32]
+        });
+
+        const marker = L.marker(
+            [parseFloat(h.lat), parseFloat(h.lng)],
+            { icon }
+        )
+        .addTo(map)
+        .bindPopup(`<b>${h.name}</b><br>${h.location}`);
 
         markers.push(marker);
     });
+
     if (markers.length > 0) {
-    const group = L.featureGroup(markers);
-    if (!map._zoomInitialized) {
-    map.fitBounds(group.getBounds());
-    map._zoomInitialized = true;
-}
-}
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds(), { padding: [50, 50] });
+    }
 }
 
         function findBestMatch() {
@@ -1000,13 +1030,11 @@ await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${type}&change
             const elapsed = now - activeBooking.startTime;
             const remaining = Math.max(0, activeBooking.duration - elapsed);
 
-            // Format mm:ss
             const mins = Math.floor(remaining / 60000);
             const secs = Math.floor((remaining % 60000) / 1000);
             document.getElementById('hold-timer').innerText = 
                 `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-            // Progress Bar
             const pct = (remaining / activeBooking.duration) * 100;
             document.getElementById('booking-progress').style.width = pct + '%';
 
@@ -1055,38 +1083,36 @@ await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${type}&change
 
         <span class="modal-close" onclick="closeModal()">✖</span>
 
-        <h3>Patient Details</h3>
+        <h3 style="margin-bottom:15px;">Patient Details</h3>
 
-        <input id="p-name" placeholder="Patient Name" style="width:100%; margin-bottom:10px;">
-        <input id="p-age" placeholder="Age" style="width:100%; margin-bottom:10px;">
-        
-        <select id="p-gender" style="width:100%; margin-bottom:10px;">
+        <label>Name</label>
+        <input id="p-name" placeholder="Enter patient name" required style="width:100%; margin-bottom:12px; padding:8px;">
+
+        <label>Age</label>
+        <input id="p-age" type="number" placeholder="Enter age" required style="width:100%; margin-bottom:12px; padding:8px;">
+
+        <label>Gender</label>
+        <select id="p-gender" style="width:100%; margin-bottom:12px; padding:8px;">
+            <option value="">Select Gender</option>
             <option>Male</option>
             <option>Female</option>
             <option>Other</option>
         </select>
 
-        <input id="p-ipd" placeholder="IPD No" style="width:100%; margin-bottom:10px;">
-        
-        <button onclick="submitForm()">Submit & Generate PDF</button>
+        <label>Phone Number</label>
+        <input id="p-phone" placeholder="Enter phone number" style="width:100%; margin-bottom:15px; padding:8px;">
+
+        <div style="display:flex; gap:10px;">
+            <button onclick="submitForm()" style="flex:1; padding:10px; background:#0284c7; color:white; border:none; border-radius:6px; cursor:pointer;">
+                Submit & Generate PDF
+            </button>
+
+            <button onclick="closeModal()" style="flex:1; padding:10px; background:#e2e8f0; border:none; border-radius:6px; cursor:pointer;">
+                Cancel
+            </button>
+        </div>
 
     </div>
-</div>
-    
-    <h3>Patient Details</h3>
-
-    <input id="p-name" placeholder="Patient Name" style="width:100%; margin-bottom:10px;">
-    <input id="p-age" placeholder="Age" style="width:100%; margin-bottom:10px;">
-    
-    <select id="p-gender" style="width:100%; margin-bottom:10px;">
-        <option>Male</option>
-        <option>Female</option>
-        <option>Other</option>
-    </select>
-
-    <input id="p-ipd" placeholder="IPD No" style="width:100%; margin-bottom:10px;">
-    
-    <button onclick="submitForm()">Submit & Generate PDF</button>
 </div>
 </body>
 </html>

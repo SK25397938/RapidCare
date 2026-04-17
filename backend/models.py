@@ -32,4 +32,4 @@ class Patient(Base):
     name = Column(String)
     age = Column(String)
     gender = Column(String)
-    ipd = Column(String)
+    phone = Column(String)

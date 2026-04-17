@@ -430,7 +430,7 @@
                         <tr>
                             <th>Name</th>
                             <th>Age</th>
-                            <th>IPD Number</th>
+                            <th>Phone Number</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -474,7 +474,7 @@
             </select>
         </div>
         <div class="form-group">
-            <input id="p-ipd" placeholder="IPD No">
+            <input id="p-phone" placeholder="Phone Number">
         </div>
 
         <button onclick="submitForm()" class="btn-submit">Submit Patient</button>
@@ -544,7 +544,7 @@
                 row.innerHTML = `
                     <td style="font-weight:500;">${p.name}</td>
                     <td>${p.age}</td>
-                    <td style="font-family:monospace; color: var(--text-light);">${p.ipd}</td>
+                    <td style="font-family:monospace; color: var(--text-light);">${p.phone}</td>
                     <td>
                         <button class="btn-discharge" onclick="discharge(${p.id})">Discharge</button>
                     </td>
@@ -742,25 +742,43 @@
         document.getElementById("patient-modal").style.display = "none";
     }
 
-    function submitForm() {
-        const name = document.getElementById("p-name").value;
-        const age = document.getElementById("p-age").value;
-        const ipd = document.getElementById("p-ipd").value;
-        
-        if(!name || !age || !ipd) {
-            alert("Please fill all fields");
-            return;
-        }
+    async function submitForm() {
+    const name = document.getElementById("p-name").value;
+    const age = document.getElementById("p-age").value;
+    const phone = document.getElementById("p-phone").value;
+    const gender = document.getElementById("p-gender").value;
 
-        logActivity(`New patient ${name} added manually`, 'info');
-        closeModal();
-        
-        document.getElementById("p-name").value = "";
-        document.getElementById("p-age").value = "";
-        document.getElementById("p-ipd").value = "";
-        
-        loadPatients();
+    if(!name || !age || !phone) {
+        alert("Please fill all fields");
+        return;
     }
+
+    await fetch("http://127.0.0.1:8000/add-patient", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            hospital_id: hospitals.length ? hospitals[0].id : 1,
+            name: name,
+            age: age,
+            gender: gender,
+            phone: phone,
+            email: localStorage.getItem("email")
+        })
+    });
+    
+
+    logActivity(`New patient ${name} added`, 'success');
+
+    closeModal();
+
+    document.getElementById("p-name").value = "";
+    document.getElementById("p-age").value = "";
+    document.getElementById("p-phone").value = "";
+
+    loadPatients();
+}
 
     window.onclick = function(event) {
         const modal = document.getElementById('patient-modal');

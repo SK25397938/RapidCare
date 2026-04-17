@@ -10,7 +10,7 @@ class PatientCreate(BaseModel):
     name: str
     age: str
     gender: str
-    ipd: str
+    phone: str
 
 models.Base.metadata.create_all(bind=engine)
 
