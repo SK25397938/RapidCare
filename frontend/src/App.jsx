@@ -1,46 +1,47 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import MapView from "./components/MapView";
 import Sidebar from "./components/Sidebar";
 import EmergencyButton from "./components/EmergencyButton";
 import Topbar from "./components/Topbar";
 import RightPanel from "./components/RightPanel";
+import { useEmergencyFlow } from "./hooks/useEmergencyFlow";
 import { useHospitalFeed } from "./hooks/useHospitalFeed";
-import { getHospitalStatus, sortHospitalsByAvailability } from "./utils/hospitalStatus";
-
-function pickAssignedHospital(hospitals) {
-  const ranked = sortHospitalsByAvailability(hospitals);
-  return ranked.find((hospital) => hospital.beds > 0) || ranked[0] || null;
-}
+import { getHospitalOperationalState } from "./utils/hospitalStatus";
 
 export default function App() {
-  const { hospitals, connectionState, lastUpdated } = useHospitalFeed();
-  const [selectedHospitalId, setSelectedHospitalId] = useState(null);
+  const { hospitals, connectionState, lastUpdated, latestUpdateHealth } = useHospitalFeed();
   const [surgeMode, setSurgeMode] = useState(false);
-  const [hasRequestedHelp, setHasRequestedHelp] = useState(false);
-
-  useEffect(() => {
-    if (!hospitals.length) return;
-    if (!selectedHospitalId || !hospitals.some((hospital) => hospital.id === selectedHospitalId)) {
-      setSelectedHospitalId(hospitals[0].id);
-    }
-  }, [hospitals, selectedHospitalId]);
-
-  const sortedHospitals = useMemo(() => sortHospitalsByAvailability(hospitals), [hospitals]);
-  const selectedHospital =
-    sortedHospitals.find((hospital) => hospital.id === selectedHospitalId) || sortedHospitals[0] || null;
-  const assignedHospital = hasRequestedHelp ? pickAssignedHospital(sortedHospitals) : null;
+  const {
+    activeHospital,
+    ambulanceSnapshot,
+    currentState,
+    fallbackHospitals,
+    holdTimeRemaining,
+    noBedsAvailable,
+    panelOpen,
+    rankedHospitals,
+    reservation,
+    searchMessage,
+    searchState,
+    selectHospital,
+    reserveHospital,
+    confirmReservation,
+    selectedHospitalId,
+    startEmergencySearch,
+    workflowSteps,
+  } = useEmergencyFlow(hospitals, { surgeMode });
 
   const totals = useMemo(() => {
-    return hospitals.reduce(
+    return rankedHospitals.reduce(
       (accumulator, hospital) => {
-        const status = getHospitalStatus(hospital.beds);
+        const status = getHospitalOperationalState(hospital, reservation);
         accumulator.totalBeds += hospital.beds;
-        accumulator[status.key] += 1;
+        accumulator[status.key] = (accumulator[status.key] ?? 0) + 1;
         return accumulator;
       },
-      { totalBeds: 0, available: 0, limited: 0, full: 0 }
+      { totalBeds: 0, available: 0, limited: 0, full: 0, held: 0, reserved: 0 }
     );
-  }, [hospitals]);
+  }, [rankedHospitals, reservation]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07111f] text-white">
@@ -49,18 +50,23 @@ export default function App() {
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <Topbar
+          connectionState={connectionState}
+          dataHealth={latestUpdateHealth}
           surgeMode={surgeMode}
           onToggleSurgeMode={() => setSurgeMode((current) => !current)}
-          connectionState={connectionState}
           totals={totals}
         />
 
         <main className="flex flex-1 flex-col gap-4 px-4 pb-28 pt-3 lg:px-5 lg:pb-8">
-          <section className="grid flex-1 gap-4 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
+          <section className="grid flex-1 gap-4 lg:grid-cols-[390px_minmax(0,1fr)_390px]">
             <Sidebar
-              hospitals={sortedHospitals}
-              selectedHospitalId={selectedHospital?.id ?? null}
-              onSelectHospital={setSelectedHospitalId}
+              hospitals={rankedHospitals}
+              reservation={reservation}
+              searchState={searchState}
+              searchMessage={searchMessage}
+              selectedHospitalId={selectedHospitalId}
+              onReserveHospital={reserveHospital}
+              onSelectHospital={selectHospital}
               lastUpdated={lastUpdated}
             />
 
@@ -71,31 +77,46 @@ export default function App() {
                     Predictive Response Grid
                   </p>
                   <h1 className="mt-2 max-w-2xl font-['Space_Grotesk'] text-2xl font-semibold leading-tight text-white lg:text-[2rem]">
-                    Others show what is. We show what will be.
+                    Real-world emergency routing with live ICU confidence.
                   </h1>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100 shadow-[0_0_25px_rgba(34,211,238,0.18)]">
-                    {totals.totalBeds} ICU beds in network
+                    Search / Select / Reserve / Track
                   </div>
                   <div className="rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm text-rose-100 shadow-[0_0_25px_rgba(244,63,94,0.18)]">
-                    Ambulance dispatch ready
+                    {noBedsAvailable ? "Fallback radius active" : "Ambulance dispatch ready"}
                   </div>
                 </div>
               </div>
 
               <MapView
-                hospitals={sortedHospitals}
-                selectedHospitalId={selectedHospital?.id ?? null}
-                onSelectHospital={setSelectedHospitalId}
+                hospitals={rankedHospitals}
+                selectedHospitalId={selectedHospitalId}
+                reservation={reservation}
+                ambulanceSnapshot={ambulanceSnapshot}
+                onSelectHospital={selectHospital}
               />
             </div>
 
-            <RightPanel assignedHospital={assignedHospital} selectedHospital={selectedHospital} hasRequestedHelp={hasRequestedHelp} />
+            <RightPanel
+              activeHospital={activeHospital}
+              ambulanceSnapshot={ambulanceSnapshot}
+              currentState={currentState}
+              fallbackHospitals={fallbackHospitals}
+              holdTimeRemaining={holdTimeRemaining}
+              noBedsAvailable={noBedsAvailable}
+              onConfirmReservation={confirmReservation}
+              panelOpen={panelOpen}
+              reservation={reservation}
+              searchMessage={searchMessage}
+              searchState={searchState}
+              workflowSteps={workflowSteps}
+            />
           </section>
 
-          <EmergencyButton onRequest={() => setHasRequestedHelp(true)} />
+          <EmergencyButton onRequest={startEmergencySearch} searchState={searchState} />
         </main>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import { Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import { getHospitalStatus } from "../utils/hospitalStatus";
+import ConfidenceBadge from "./ui/ConfidenceBadge";
+import { getHospitalOperationalState } from "../utils/hospitalStatus";
+import { formatEta } from "../utils/triage";
 
 function createHospitalIcon(status, selected) {
   return L.divIcon({
@@ -20,8 +22,8 @@ function createHospitalIcon(status, selected) {
   });
 }
 
-export default function HospitalMarker({ hospital, selected, onSelect }) {
-  const status = getHospitalStatus(hospital.beds);
+export default function HospitalMarker({ hospital, reservation, selected, onSelect }) {
+  const status = getHospitalOperationalState(hospital, reservation);
 
   return (
     <Marker
@@ -31,19 +33,17 @@ export default function HospitalMarker({ hospital, selected, onSelect }) {
         click: onSelect,
       }}
     >
-      <Popup className="rapidcare-popup">
-        <div className="space-y-2 text-slate-900">
-          <div className="text-base font-semibold">{hospital.name}</div>
-          <div className="text-sm text-slate-600">{hospital.type} ICU</div>
-          <div className="flex items-center gap-2">
-            <span
-              className="inline-flex h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: status.ring }}
-            />
-              <span className="text-sm font-medium">
-              {hospital.beds} beds | {status.label}
-            </span>
+      <Popup className="rapidcare-popup min-w-[260px]">
+        <div className="space-y-3 text-slate-900">
+          <div>
+            <div className="text-base font-semibold">{hospital.name}</div>
+            <div className="text-sm text-slate-600">{hospital.type} ICU</div>
           </div>
+          <div className="flex items-center justify-between text-sm">
+            <span>{hospital.beds} beds</span>
+            <span>{formatEta(hospital.etaMinutes)}</span>
+          </div>
+          <ConfidenceBadge updatedAt={hospital.updatedAt} />
         </div>
       </Popup>
     </Marker>
