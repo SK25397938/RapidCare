@@ -30,6 +30,7 @@ export default function RightPanel({
   onConfirmReservation,
   panelOpen,
   reservation,
+  shareLink,
   searchMessage,
   searchState,
   workflowSteps,
@@ -88,7 +89,7 @@ export default function RightPanel({
 
               {reservation?.status === "held" ? (
                 <div className="rounded-[22px] border border-sky-400/25 bg-sky-500/10 px-4 py-4 text-sm text-sky-50">
-                  Bed hold active for <span className="font-semibold">{holdTimeRemaining}s</span>. Confirm to convert the hold
+                  Bed temporarily reserved for <span className="font-semibold">{holdTimeRemaining}s</span>. Confirm to convert the hold
                   into a reservation before timeout.
                 </div>
               ) : null}
@@ -138,9 +139,20 @@ export default function RightPanel({
                 >
                   {reservation?.status === "reserved" ? "Reservation confirmed" : "Confirm reservation"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => window.navigator.clipboard?.writeText(shareLink)}
+                  className="rounded-full border border-cyan-300/30 bg-cyan-500/15 px-5 py-3 text-sm font-semibold text-cyan-50 transition hover:bg-cyan-500/25"
+                >
+                  Share Emergency Status
+                </button>
                 <div className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-300">
                   Auto-dispatch remains locked to the current hospital until hold expires.
                 </div>
+              </div>
+
+              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+                Mock share link: <span className="text-cyan-200">{shareLink}</span>
               </div>
             </motion.div>
           ) : (

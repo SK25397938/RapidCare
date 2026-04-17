@@ -9,8 +9,19 @@ import {
   pickBestHospital,
   rankHospitals,
 } from "../utils/triage";
+import {
+  assignAmbulance as assignAmbulanceRequest,
+  confirmReservation as confirmReservationRequest,
+  reserveBed as reserveBedRequest,
+  searchHospitals as searchHospitalsRequest,
+} from "../api/rapidcareApi";
 
-const HOLD_WINDOW_MS = 4 * 60 * 1000;
+const HOLD_WINDOW_MS = 5 * 60 * 1000;
+
+function buildMockShareLink(reservationId, hospitalId) {
+  const token = reservationId || hospitalId || "rapidcare";
+  return `https://rapidcare.app/share/${token}`;
+}
 
 export function useEmergencyFlow(hospitals, options = {}) {
   const surgeMode = options.surgeMode ?? false;
@@ -20,11 +31,23 @@ export function useEmergencyFlow(hospitals, options = {}) {
   const [reservation, setReservation] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [holdClock, setHoldClock] = useState(Date.now());
+  const [bestMatchId, setBestMatchId] = useState(null);
+  const [searchOverrides, setSearchOverrides] = useState({});
+  const [ambulanceOrigin, setAmbulanceOrigin] = useState(AMBULANCE_ORIGIN);
   const searchTimeoutRef = useRef(null);
 
   const enrichedHospitals = useMemo(
-    () => hospitals.map((hospital) => enrichHospitalMetrics(hospital, { origin: COMMAND_CENTER, surgeMode })),
-    [hospitals, surgeMode]
+    () =>
+      hospitals.map((hospital) =>
+        enrichHospitalMetrics(
+          {
+            ...hospital,
+            ...(searchOverrides[hospital.id] ?? {}),
+          },
+          { origin: COMMAND_CENTER, surgeMode }
+        )
+      ),
+    [hospitals, searchOverrides, surgeMode]
   );
 
   const rankedHospitals = useMemo(
@@ -96,7 +119,7 @@ export function useEmergencyFlow(hospitals, options = {}) {
 
   const noBedsAvailable = !bestHospital;
 
-  const emergencySearch = () => {
+  const emergencySearch = async () => {
     if (searchTimeoutRef.current) {
       window.clearTimeout(searchTimeoutRef.current);
     }
@@ -105,19 +128,50 @@ export function useEmergencyFlow(hospitals, options = {}) {
     setSearchState("searching");
     setSearchMessage("Finding best ICU...");
     setReservation(null);
+    setBestMatchId(null);
 
-    searchTimeoutRef.current = window.setTimeout(() => {
+    searchTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        const response = await searchHospitalsRequest({
+          lat: COMMAND_CENTER.lat,
+          lng: COMMAND_CENTER.lng,
+          emergency_type: "trauma",
+        });
+
+        const rankedMatches = response.hospitals ?? [];
+
+        if (rankedMatches.length > 0) {
+          const overrideMap = rankedMatches.reduce((lookup, hospital, index) => {
+            lookup[String(hospital.id)] = {
+              beds: hospital.available_beds,
+              etaMinutes: hospital.eta_minutes,
+              distanceKm: hospital.distance_km,
+              type: hospital.specialization ?? hospital.type,
+              bestMatch: index === 0,
+              updatedAt: hospital.updated_at ?? new Date().toISOString(),
+            };
+            return lookup;
+          }, {});
+
+          setSearchOverrides((current) => ({
+            ...current,
+            ...overrideMap,
+          }));
+          setBestMatchId(String(rankedMatches[0].id));
+          setSelectedHospitalId(String(rankedMatches[0].id));
+          setSearchState("selected");
+          setSearchMessage("Best-fit ICU found. Review the recommendation and reserve the bed.");
+          return;
+        }
+      } catch {
+        // Fall back to the client-side ranking for demo reliability.
+      }
+
       if (bestHospital) {
         setSelectedHospitalId(bestHospital.id);
-        setReservation({
-          hospitalId: bestHospital.id,
-          status: "held",
-          source: "auto",
-          expiresAt: Date.now() + HOLD_WINDOW_MS,
-          createdAt: Date.now(),
-        });
-        setSearchState("held");
-        setSearchMessage("Best-fit ICU found. Temporary hold active while dispatch is assigned.");
+        setBestMatchId(bestHospital.id);
+        setSearchState("selected");
+        setSearchMessage("Best-fit ICU found. Review the recommendation and reserve the bed.");
       } else {
         setSearchState("expanded");
         setSearchMessage("Expanding search radius...");
@@ -132,35 +186,89 @@ export function useEmergencyFlow(hospitals, options = {}) {
     setSearchMessage("Hospital selected. Review routing and reserve if appropriate.");
   };
 
-  const reserveHospital = (hospitalId) => {
+  const reserveHospital = async (hospitalId) => {
     setSelectedHospitalId(hospitalId);
     setPanelOpen(true);
-    setReservation({
-      hospitalId,
-      status: "held",
-      source: "manual",
-      expiresAt: Date.now() + HOLD_WINDOW_MS,
-      createdAt: Date.now(),
-    });
-    setSearchState("held");
-    setSearchMessage("Temporary hold placed. Confirm reservation to secure dispatch.");
+    setSearchState("searching");
+    setSearchMessage("Placing temporary bed hold...");
+
+    try {
+      const response = await reserveBedRequest({ hospital_id: hospitalId });
+
+      setReservation({
+        hospitalId,
+        reservationId: response.reservation_id,
+        status: "held",
+        source: "manual",
+        shareLink: buildMockShareLink(response.reservation_id, hospitalId),
+        expiresAt: new Date(response.hold_until).getTime(),
+        createdAt: Date.now(),
+      });
+      setSearchState("held");
+      setSearchMessage("Bed temporarily reserved. Confirm to lock dispatch.");
+      return;
+    } catch {
+      setReservation({
+        hospitalId,
+        status: "held",
+        source: "manual",
+        shareLink: buildMockShareLink(null, hospitalId),
+        expiresAt: Date.now() + HOLD_WINDOW_MS,
+        createdAt: Date.now(),
+      });
+      setSearchState("held");
+      setSearchMessage("Bed temporarily reserved. Confirm to lock dispatch.");
+    }
   };
 
-  const confirmReservation = () => {
+  const confirmReservation = async () => {
     if (!reservation) {
       return;
+    }
+
+    let updatedReservation = {
+      ...reservation,
+      status: "reserved",
+    };
+
+    try {
+      if (reservation.reservationId) {
+        const response = await confirmReservationRequest({
+          reservation_id: reservation.reservationId,
+        });
+
+        updatedReservation = {
+          ...updatedReservation,
+          shareLink: buildMockShareLink(response.reservation_id, reservation.hospitalId),
+        };
+      }
+    } catch {
+      // Keep the local demo flow responsive even if the backend is offline.
     }
 
     setReservation((current) =>
       current
         ? {
-            ...current,
-            status: "reserved",
+            ...updatedReservation,
           }
         : current
     );
     setSearchState("reserved");
     setSearchMessage("Bed reserved. Ambulance route is being tracked live.");
+
+    try {
+      const ambulanceResponse = await assignAmbulanceRequest({
+        lat: COMMAND_CENTER.lat,
+        lng: COMMAND_CENTER.lng,
+      });
+
+      setAmbulanceOrigin({
+        lat: ambulanceResponse.current_lat ?? ambulanceResponse.lat ?? AMBULANCE_ORIGIN.lat,
+        lng: ambulanceResponse.current_lng ?? ambulanceResponse.lng ?? AMBULANCE_ORIGIN.lng,
+      });
+    } catch {
+      setAmbulanceOrigin(AMBULANCE_ORIGIN);
+    }
   };
 
   const workflowSteps = [
@@ -205,14 +313,14 @@ export function useEmergencyFlow(hospitals, options = {}) {
         active: false,
         phase: "idle",
         progress: 0,
-        position: AMBULANCE_ORIGIN,
+        position: ambulanceOrigin,
         etaMinutes: 0,
         distanceKm: 0,
       });
       return;
     }
 
-    const totalDistanceKm = Math.max(1.2, enrichHospitalMetrics(activeHospital, { origin: AMBULANCE_ORIGIN, surgeMode }).distanceKm);
+    const totalDistanceKm = Math.max(1.2, enrichHospitalMetrics(activeHospital, { origin: ambulanceOrigin, surgeMode }).distanceKm);
     const totalSeconds = Math.max(45, activeHospital.etaMinutes * 6);
     const startedAt = Date.now();
 
@@ -225,7 +333,7 @@ export function useEmergencyFlow(hospitals, options = {}) {
         active: true,
         phase,
         progress,
-        position: interpolatePosition(progress, AMBULANCE_ORIGIN, activeHospital),
+        position: interpolatePosition(progress, ambulanceOrigin, activeHospital),
         etaMinutes: Math.max(1, Math.ceil((1 - progress) * activeHospital.etaMinutes)),
         distanceKm: Math.max(0, Number((totalDistanceKm * (1 - progress)).toFixed(1))),
       });
@@ -238,11 +346,12 @@ export function useEmergencyFlow(hospitals, options = {}) {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [activeHospital, reservation, surgeMode]);
+  }, [activeHospital, ambulanceOrigin, reservation, surgeMode]);
 
   return {
     activeHospital,
     ambulanceSnapshot,
+    bestMatchId,
     currentState,
     fallbackHospitals,
     holdTimeRemaining,
@@ -253,6 +362,7 @@ export function useEmergencyFlow(hospitals, options = {}) {
     searchMessage,
     searchState,
     selectHospital,
+    shareLink: reservation?.shareLink ?? buildMockShareLink(null, selectedHospitalId),
     reserveHospital,
     confirmReservation,
     selectedHospital,

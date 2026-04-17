@@ -14,6 +14,7 @@ export default function App() {
   const {
     activeHospital,
     ambulanceSnapshot,
+    bestMatchId,
     currentState,
     fallbackHospitals,
     holdTimeRemaining,
@@ -23,6 +24,7 @@ export default function App() {
     reservation,
     searchMessage,
     searchState,
+    shareLink,
     selectHospital,
     reserveHospital,
     confirmReservation,
@@ -43,6 +45,8 @@ export default function App() {
     );
   }, [rankedHospitals, reservation]);
 
+  const hospitalsActive = rankedHospitals.filter((hospital) => hospital.beds > 0).length;
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07111f] text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(39,191,255,0.16),_transparent_32%),radial-gradient(circle_at_bottom,_rgba(255,76,76,0.15),_transparent_28%),linear-gradient(140deg,_#040b16_0%,_#091728_42%,_#040812_100%)]" />
@@ -52,14 +56,22 @@ export default function App() {
         <Topbar
           connectionState={connectionState}
           dataHealth={latestUpdateHealth}
+          hospitalsActive={hospitalsActive}
           surgeMode={surgeMode}
           onToggleSurgeMode={() => setSurgeMode((current) => !current)}
           totals={totals}
         />
 
+        <div className="px-4 pt-3 lg:px-5">
+          <div className="rounded-[24px] border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-slate-200 backdrop-blur-xl">
+            {totals.totalBeds} ICU beds live | {hospitalsActive} hospitals active
+          </div>
+        </div>
+
         <main className="flex flex-1 flex-col gap-4 px-4 pb-28 pt-3 lg:px-5 lg:pb-8">
           <section className="grid flex-1 gap-4 lg:grid-cols-[390px_minmax(0,1fr)_390px]">
             <Sidebar
+              bestMatchId={bestMatchId}
               hospitals={rankedHospitals}
               reservation={reservation}
               searchState={searchState}
@@ -110,6 +122,7 @@ export default function App() {
               onConfirmReservation={confirmReservation}
               panelOpen={panelOpen}
               reservation={reservation}
+              shareLink={shareLink}
               searchMessage={searchMessage}
               searchState={searchState}
               workflowSteps={workflowSteps}

@@ -1,6 +1,6 @@
 import AnimatedNumber from "./ui/AnimatedNumber";
 
-export default function Topbar({ connectionState, dataHealth, surgeMode, onToggleSurgeMode, totals }) {
+export default function Topbar({ connectionState, dataHealth, hospitalsActive, surgeMode, onToggleSurgeMode, totals }) {
   return (
     <header className="relative z-20 flex flex-wrap items-center justify-between gap-4 px-4 pt-4 lg:px-5">
       <div className="flex items-center gap-4 rounded-[26px] border border-white/10 bg-white/[0.06] px-5 py-4 backdrop-blur-2xl">
@@ -40,7 +40,7 @@ export default function Topbar({ connectionState, dataHealth, surgeMode, onToggl
         </button>
 
         <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
-          <AnimatedNumber value={totals.totalBeds} /> beds | <AnimatedNumber value={totals.available} /> green | <AnimatedNumber value={totals.limited} /> orange | <AnimatedNumber value={totals.full} /> red
+          <AnimatedNumber value={totals.totalBeds} /> beds | <AnimatedNumber value={hospitalsActive} /> active | <AnimatedNumber value={totals.available} /> green | <AnimatedNumber value={totals.limited} /> orange | <AnimatedNumber value={totals.full} /> red
         </div>
       </div>
     </header>

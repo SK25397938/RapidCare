@@ -4,9 +4,10 @@ import StatusBadge from "./ui/StatusBadge";
 import { getHospitalOperationalState } from "../utils/hospitalStatus";
 import { formatDistance, formatEta } from "../utils/triage";
 
-export default function HospitalCard({ hospital, reservation, rank, selected, onSelect, onReserve }) {
+export default function HospitalCard({ bestMatch = false, hospital, reservation, rank, selected, onSelect, onReserve }) {
   const status = getHospitalOperationalState(hospital, reservation);
   const reserveDisabled = status.key === "full" || status.key === "reserved";
+  const predictionTag = hospital.beds <= 2 ? "High demand expected" : null;
 
   return (
     <motion.article
@@ -32,6 +33,11 @@ export default function HospitalCard({ hospital, reservation, rank, selected, on
           <div>
             <h3 className="font-['Space_Grotesk'] text-lg font-semibold text-white">{hospital.name}</h3>
             <p className="mt-1 text-sm text-slate-300">{hospital.type} ICU</p>
+            {bestMatch ? (
+              <span className="mt-2 inline-flex rounded-full border border-cyan-300/30 bg-cyan-500/15 px-2 py-1 text-[10px] uppercase tracking-[0.24em] text-cyan-100">
+                Best Match
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -62,6 +68,11 @@ export default function HospitalCard({ hospital, reservation, rank, selected, on
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <StatusBadge status={status} />
         <ConfidenceBadge updatedAt={hospital.updatedAt} />
+        {predictionTag ? (
+          <span className="inline-flex items-center rounded-full border border-amber-300/30 bg-amber-500/15 px-3 py-1 text-xs text-amber-100">
+            {predictionTag}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
@@ -79,7 +90,7 @@ export default function HospitalCard({ hospital, reservation, rank, selected, on
               : "border-sky-300/30 bg-sky-500/15 text-sky-50 hover:bg-sky-500/25"
           }`}
         >
-          {status.key === "held" ? "Held" : status.key === "reserved" ? "Reserved" : "Reserve"}
+          {status.key === "held" ? "Held" : status.key === "reserved" ? "Reserved" : "Reserve Bed"}
         </button>
       </div>
     </motion.article>

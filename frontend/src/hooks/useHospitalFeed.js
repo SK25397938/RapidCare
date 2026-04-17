@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { mockHospitals } from "../data/mockHospitals";
 import { getConfidenceState } from "../utils/hospitalStatus";
+import { supabase } from "../lib/supabase";
+import { supabaseConfigured } from "../lib/runtimeConfig";
 
 const freshnessOffsets = {
   h1: 18_000,
@@ -28,6 +30,69 @@ function normalizeHospital(hospital, index) {
   };
 }
 
+function resolveHospitalType(hospital) {
+  return (
+    hospital.specialization ??
+    hospital.icu_specialization ??
+    hospital.icu_type ??
+    hospital.type ??
+    "General"
+  );
+}
+
+function getBedAvailabilityCounts(beds) {
+  const now = Date.now();
+
+  return beds.reduce(
+    (summary, bed) => {
+      const holdUntil = bed.hold_until ? new Date(bed.hold_until).getTime() : null;
+      const isExpiredHold = bed.status === "held" && holdUntil && holdUntil < now;
+
+      if (bed.status === "available" || isExpiredHold) {
+        summary.available += 1;
+      }
+
+      summary.updatedAt = [summary.updatedAt, bed.updated_at, bed.hold_until]
+        .filter(Boolean)
+        .sort()
+        .at(-1) ?? summary.updatedAt;
+
+      return summary;
+    },
+    { available: 0, updatedAt: null }
+  );
+}
+
+function createSupabaseSnapshot(hospitalRows, bedRows) {
+  const bedsByHospitalId = bedRows.reduce((lookup, bed) => {
+    const hospitalId = String(bed.hospital_id ?? bed.hospitalId ?? "");
+    if (!lookup[hospitalId]) {
+      lookup[hospitalId] = [];
+    }
+
+    lookup[hospitalId].push(bed);
+    return lookup;
+  }, {});
+
+  return hospitalRows.map((hospital, index) => {
+    const hospitalId = String(hospital.id ?? hospital.hospital_id ?? `hospital-${index + 1}`);
+    const bedSummary = getBedAvailabilityCounts(bedsByHospitalId[hospitalId] ?? []);
+
+    return normalizeHospital(
+      {
+        id: hospitalId,
+        name: hospital.name ?? hospital.hospital_name ?? `Hospital ${index + 1}`,
+        beds: bedSummary.available || hospital.available_beds || 0,
+        type: resolveHospitalType(hospital),
+        lat: hospital.lat ?? hospital.latitude,
+        lng: hospital.lng ?? hospital.longitude,
+        updatedAt: bedSummary.updatedAt ?? hospital.updated_at ?? hospital.updatedAt,
+      },
+      index
+    );
+  });
+}
+
 function formatUpdatedTime(date) {
   return new Intl.DateTimeFormat("en-IN", {
     hour: "2-digit",
@@ -42,68 +107,82 @@ export function useHospitalFeed() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
 
   useEffect(() => {
-    let socket;
-
-    try {
-      socket = new WebSocket("ws://127.0.0.1:8000/ws");
-
-      socket.onopen = () => {
-        setConnectionState("live");
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-          if (Array.isArray(payload) && payload.length) {
-            const now = Date.now();
-            setHospitals(
-              payload.map((hospital, index) =>
-                normalizeHospital({
-                  ...hospital,
-                  updatedAt: new Date(now - (freshnessOffsets[hospital.id] ?? 40_000)).toISOString(),
-                }, index)
-              )
-            );
-            setLastUpdatedAt(new Date());
-          }
-        } catch {
-          setConnectionState("sync error");
-        }
-      };
-
-      socket.onerror = () => {
-        setConnectionState("mock mode");
-      };
-
-      socket.onclose = () => {
-        setConnectionState((current) => (current === "live" ? "reconnecting" : "mock mode"));
-      };
-    } catch {
+    if (!supabaseConfigured || !supabase) {
       setConnectionState("mock mode");
+
+      const intervalId = window.setInterval(() => {
+        const now = Date.now();
+
+        setHospitals((currentHospitals) =>
+          currentHospitals.map((hospital, index) => {
+            const offset = Math.floor(Math.random() * 3) - 1;
+            const freshnessBias = (freshnessOffsets[hospital.id] ?? 30_000) + ((now / 1000 + index * 17) % 24) * 1000;
+
+            return normalizeHospital({
+              ...hospital,
+              beds: Math.max(0, hospital.beds + offset),
+              updatedAt: new Date(now - freshnessBias).toISOString(),
+            }, index);
+          })
+        );
+        setLastUpdatedAt(new Date());
+      }, 12000);
+
+      return () => {
+        window.clearInterval(intervalId);
+      };
     }
 
-    const intervalId = window.setInterval(() => {
-      const now = Date.now();
+    let cancelled = false;
+    let hospitalChannel;
+    let bedChannel;
 
-      setHospitals((currentHospitals) =>
-        currentHospitals.map((hospital, index) => {
-          const offset = Math.floor(Math.random() * 3) - 1;
-          const freshnessBias = (freshnessOffsets[hospital.id] ?? 30_000) + ((now / 1000 + index * 17) % 24) * 1000;
+    async function loadSnapshot() {
+      try {
+        const [hospitalResponse, bedResponse] = await Promise.all([
+          supabase.from("hospitals").select("*"),
+          supabase.from("beds").select("*"),
+        ]);
 
-          return normalizeHospital({
-            ...hospital,
-            beds: Math.max(0, hospital.beds + offset),
-            updatedAt: new Date(now - freshnessBias).toISOString(),
-          }, index);
-        })
-      );
-      setLastUpdatedAt(new Date());
-    }, 12000);
+        if (hospitalResponse.error) {
+          throw hospitalResponse.error;
+        }
+
+        if (bedResponse.error) {
+          throw bedResponse.error;
+        }
+
+        if (!cancelled) {
+          setHospitals(createSupabaseSnapshot(hospitalResponse.data ?? [], bedResponse.data ?? []));
+          setConnectionState("live");
+          setLastUpdatedAt(new Date());
+        }
+      } catch {
+        if (!cancelled) {
+          setConnectionState("sync error");
+        }
+      }
+    }
+
+    loadSnapshot();
+
+    hospitalChannel = supabase
+      .channel("rapidcare-hospitals")
+      .on("postgres_changes", { event: "*", schema: "public", table: "hospitals" }, loadSnapshot)
+      .subscribe();
+
+    bedChannel = supabase
+      .channel("rapidcare-beds")
+      .on("postgres_changes", { event: "*", schema: "public", table: "beds" }, loadSnapshot)
+      .subscribe();
 
     return () => {
-      window.clearInterval(intervalId);
-      if (socket && socket.readyState <= 1) {
-        socket.close();
+      cancelled = true;
+      if (hospitalChannel) {
+        supabase.removeChannel(hospitalChannel);
+      }
+      if (bedChannel) {
+        supabase.removeChannel(bedChannel);
       }
     };
   }, []);

@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import HospitalCard from "./HospitalCard";
 
 export default function Sidebar({
+  bestMatchId,
   hospitals,
   reservation,
   searchState,
@@ -52,6 +53,7 @@ export default function Sidebar({
       <div className="mt-4 space-y-3">
         {hospitals.map((hospital, index) => (
           <HospitalCard
+            bestMatch={hospital.id === bestMatchId}
             key={hospital.id}
             hospital={hospital}
             rank={index + 1}
