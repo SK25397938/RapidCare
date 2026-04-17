@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidCare | Authentication</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #334155;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+        .auth-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--bg-card);
+            width: 900px;
+            max-width: 95%;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        .brand-side {
+            background: var(--primary);
+            color: white;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .brand-side::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.2), transparent);
+            pointer-events: none;
+        }
+
+        .brand-logo h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 10px; }
+        .brand-logo span { color: var(--accent); }
+        .brand-desc { color: #94a3b8; font-size: 1.1rem; margin-top: 1rem; line-height: 1.6; }
+
+        .form-side {
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .role-switcher {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-light);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .role-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .form-header { margin-bottom: 1.5rem; }
+        .form-header h2 { font-size: 1.5rem; color: var(--primary); }
+        .form-header p { color: var(--text-light); font-size: 0.9rem; margin-top: 0.5rem; }
+
+        .mode-switch {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .mode-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-weight: 500;
+            cursor: pointer;
+            padding-bottom: 5px;
+        }
+        .mode-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+        .input-group { margin-bottom: 1.25rem; }
+        .input-label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-main); }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover { background: var(--accent-hover); }
+
+        .hidden { display: none !important; }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .auth-container { grid-template-columns: 1fr; width: 100%; border-radius: 0; min-height: 100vh; }
+            .brand-side { display: none; }
+            .form-side { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="brand-side">
+        <div class="brand-logo">
+            <h1>+</h1>
+            <h1>RapidCare</h1>
+        </div>
+        <p class="brand-desc">Advanced emergency response and ICU management system. Connecting patients to care instantly.</p>
+    </div>
+
+    <div class="form-side">
+        <div class="role-switcher">
+            <button class="role-btn active" id="btn-user" onclick="switchRole('user')">User</button>
+            <button class="role-btn" id="btn-admin" onclick="switchRole('admin')">Admin</button>
+        </div>
+
+        <!-- USER SECTION -->
+        <div id="user-section">
+            <div class="mode-switch">
+                <button class="mode-btn active" id="mode-login" onclick="switchUserMode('login')">Login</button>
+                <button class="mode-btn" id="mode-signup" onclick="switchUserMode('signup')">Sign Up</button>
+            </div>
+
+            <div class="form-header">
+                <h2 id="user-title">Welcome Back</h2>
+                <p id="user-subtitle">Enter your credentials to access the dashboard.</p>
+            </div>
+
+            <form id="form-user-login" onsubmit="handleUserLogin(event)">
+                <div class="input-group">
+                    <label class="input-label">Email Address</label>
+                    <input type="email" class="form-input" placeholder="user@example.com" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary">Login as User</button>
+            </form>
+
+            <form id="form-user-signup" class="hidden" onsubmit="handleUserSignup(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label class="input-label">Name</label>
+                        <input type="text" class="form-input" placeholder="John" required id="signup-name">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Surname</label>
+                        <input type="text" class="form-input" placeholder="Doe" required id="signup-surname">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Email Address</label>
+                    <input type="email" class="form-input" placeholder="user@example.com" required id="signup-email">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" class="form-input" placeholder="Create a password" required id="signup-pass">
+                </div>
+                <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+        </div>
+
+        <!-- ADMIN SECTION -->
+        <div id="admin-section" class="hidden">
+            <div class="form-header">
+                <h2>Admin Portal</h2>
+                <p>Authorized personnel only.</p>
+            </div>
+
+            <form id="form-admin-login" onsubmit="handleAdminLogin(event)">
+                <div class="input-group">
+                    <label class="input-label">Admin Email</label>
+                    <input type="email" class="form-input" id="admin-email" placeholder="admin@rapidcare.admin" required>
+                    <div class="error-msg" id="admin-email-error">Invalid admin email format.</div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary">Access Dashboard</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchRole(role) {
+        document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-${role}`).classList.add('active');
+
+        if (role === 'user') {
+            document.getElementById('user-section').classList.remove('hidden');
+            document.getElementById('admin-section').classList.add('hidden');
+        } else {
+            document.getElementById('user-section').classList.add('hidden');
+            document.getElementById('admin-section').classList.remove('hidden');
+        }
+    }
+
+    function switchUserMode(mode) {
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`mode-${mode}`).classList.add('active');
+
+        if (mode === 'login') {
+            document.getElementById('form-user-login').classList.remove('hidden');
+            document.getElementById('form-user-signup').classList.add('hidden');
+            document.getElementById('user-title').innerText = "Welcome Back";
+            document.getElementById('user-subtitle').innerText = "Enter your credentials to access the dashboard.";
+        } else {
+            document.getElementById('form-user-login').classList.add('hidden');
+            document.getElementById('form-user-signup').classList.remove('hidden');
+            document.getElementById('user-title').innerText = "Create Account";
+            document.getElementById('user-subtitle').innerText = "Fill in the details to register as a new user.";
+        }
+    }
+
+    function handleUserLogin(e) {
+    e.preventDefault();
+    localStorage.setItem("role", "user");
+    window.location.href = "1.html";
+   } 
+
+    function handleUserSignup(e) {
+        e.preventDefault();
+        const name = document.getElementById('signup-name').value;
+        const surname = document.getElementById('signup-surname').value;
+        alert(`Account created for ${name} ${surname}. Please login.`);
+        switchUserMode('login');
+    }
+
+    function handleAdminLogin(e) {
+        e.preventDefault();
+        const emailInput = document.getElementById('admin-email').value;
+        const errorMsg = document.getElementById('admin-email-error');
+        const adminRegex = /^[a-zA-Z0-9._-]+@admin\.rapidcare\.com$/;
+
+        if (!adminRegex.test(emailInput)) {
+            errorMsg.style.display = 'block';
+            document.getElementById('admin-email').style.borderColor = 'var(--danger)';
+            return;
+        }
+
+        errorMsg.style.display = 'none';
+        document.getElementById('admin-email').style.borderColor = 'var(--border)';
+        localStorage.setItem("role", "admin");
+        window.location.href = "2.html";
+    }
+</script>
+
+</body>
+</html>

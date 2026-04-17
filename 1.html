@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidCare | Find ICU Care Instantly</title>
+    <style>
+        :root {
+            --primary: #0284c7; 
+            --primary-dark: #0369a1;
+            --success: #10b981; 
+            --warning: #f59e0b; 
+            --danger: #ef4444; 
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 12px;
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding-bottom: 2rem;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: var(--bg-card);
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.25rem;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .emergency-badge {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: pulse-red 2s infinite;
+        }
+
+        /* --- MAIN CONTAINER --- */
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* --- EMERGENCY INPUT SECTION --- */
+        .search-panel {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary);
+        }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+        }
+
+        .btn-search {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 48px;
+        }
+
+        .btn-search:hover { background: var(--primary-dark); }
+
+        .map-container {
+            width: 100%;
+            height: 250px;
+            background-color: #e2e8f0;
+            background-image: 
+                radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 20px 20px;
+            border-radius: var(--radius);
+            position: relative;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            border: 2px solid white;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        .map-marker {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-main);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .map-icon {
+            font-size: 1.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .ambulance-marker {
+            color: var(--danger);
+            transition: all 2s linear; /* Smooth movement simulation */
+            z-index: 10;
+        }
+
+        /* --- HOSPITAL GRID --- */
+        .hospital-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #f1f5f9;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .hospital-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .hospital-location {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+        }
+
+        .status-green { background: #dcfce7; color: #166534; }
+        .status-yellow { background: #fef3c7; color: #92400e; }
+        .status-red { background: #fee2e2; color: #991b1b; }
+
+        .card-body {
+            padding: 1.25rem;
+            flex: 1;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            background: #f1f5f9;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f8fafc;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        .card-footer {
+            padding: 1rem 1.25rem;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-reserve {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-reserve:hover:not(:disabled) { background: var(--primary-dark); }
+        .btn-reserve:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .btn-ambulance {
+            background: white;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+        .btn-ambulance:hover { background: #fef2f2; }
+
+        /* --- BOOKING PANEL --- */
+        .booking-panel {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(150%);
+            width: 90%;
+            max-width: 500px;
+            background: var(--text-main);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .booking-panel.active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--success);
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            margin: 0.5rem 0;
+        }
+
+        .booking-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .detail-item span {
+            display: block;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .progress-container {
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--success);
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .search-grid {
+                grid-template-columns: 1fr;
+            }
+            .hospital-grid {
+                grid-template-columns: 1fr;
+            }
+            .logo-text p {
+                display: none;
+            }
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -100%); }
+            50% { transform: translate(-50%, -110%); }
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--success);
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 200;
+            font-weight: 500;
+        }
+        #toast.show { transform: translateX(0); }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">+</div>
+            <div class="logo-text">
+                <h1>RapidCare</h1>
+                <p>Find ICU Care Instantly</p>
+            </div>
+        </div>
+        <div class="emergency-badge">
+            <span>🚨 Emergency Mode Active</span>
+        </div>
+        <button onclick="logout()" style="margin-left:20px; padding:6px 12px; cursor:pointer;">
+         Logout
+        </button>
+    </header>
+
+    <main>
+        <section class="search-panel">
+            <div class="search-grid">
+                <div class="input-group">
+                    <label>Describe Emergency</label>
+                    <input type="text" id="emergency-input" class="form-control" placeholder="e.g., heart attack, severe accident...">
+                </div>
+                <div class="input-group">
+                    <label>ICU Type</label>
+                    <select id="icu-type" class="form-control">
+                        <option value="All">All Types</option>
+                        <option value="Cardiac">Cardiac ICU</option>
+                        <option value="Neuro">Neuro ICU</option>
+                        <option value="Trauma">Trauma/Surgical ICU</option>
+                        <option value="Neonatal">Neonatal ICU</option>
+                        <option value="General">General ICU</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Priority</label>
+                    <select id="priority-level" class="form-control">
+                        <option value="Normal">Normal</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <button class="btn-search" onclick="findBestMatch()">Find Best Match</button>
+            </div>
+        </section>
+
+        <div id="map" style="height:300px; margin-bottom:20px; border-radius:12px;"></div>
+
+        <section id="hospital-list" class="hospital-grid">
+        </section>
+    </main>
+
+    <div id="booking-panel" class="booking-panel">
+        <div class="booking-header">
+            <h3>Bed Reserved Successfully</h3>
+            <button onclick="cancelBooking()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+        </div>
+        <div class="timer-display" id="hold-timer">10:00</div>
+        <p style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 1rem;">Hold Time Remaining</p>
+        
+        <div class="booking-details">
+            <div class="detail-item">
+                <span>Hospital</span>
+                <strong id="booking-hospital">--</strong>
+            </div>
+            <div class="detail-item">
+                <span>Ambulance ID</span>
+                <strong id="booking-amb-id">--</strong>
+            </div>
+            <div class="detail-item">
+                <span>ETA</span>
+                <strong id="booking-eta">-- min</strong>
+            </div>
+            <div class="detail-item">
+                <span>Status</span>
+                <strong style="color: var(--success)">Dispatched</strong>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div id="booking-progress" class="progress-bar"></div>
+        </div>
+    </div>
+
+    <div id="toast">Ambulance Dispatched!</div>
+
+    <script>
+        const role = localStorage.getItem("role");
+if (role !== "user") {
+    window.location.href = "3.html";
+}
+
+        let hospitals = [];
+        let userLat = null;
+let userLng = null;
+
+navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+});
+        let map;
+let markers = [];
+
+function initMap() {
+    map = L.map('map').setView([19.0760, 72.8777], 11); // Mumbai
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: ''
+    }).addTo(map);
+}
+
+
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+async function loadHospitals() {
+    try {
+        const res = await fetch("http://127.0.0.1:8000/hospitals");
+        hospitals = await res.json();
+        renderHospitals(document.getElementById('icu-type').value);
+    } catch (err) {
+        console.error("Backend not running", err);
+    }
+}
+
+initMap();
+loadHospitals();
+setInterval(loadHospitals, 3000);
+
+        let activeBooking = null;
+        let bookingTimer = null;
+        function renderHospitals(filterType = 'All') {
+            const container = document.getElementById('hospital-list');
+            container.innerHTML = '';
+
+           const filtered = hospitals.filter(h => {
+    let match = false;
+
+    if (filterType === 'All') match = true;
+    else if (filterType === 'Trauma') {
+        match = h.specialization.toLowerCase().includes('surgical');
+    } else {
+        match = h.specialization.toLowerCase().includes(filterType.toLowerCase());
+    }
+
+    if (!match) return false;
+
+    if (!userLat || !userLng) return true;
+
+    const distance = getDistance(
+        userLat,
+        userLng,
+        parseFloat(h.lat),
+        parseFloat(h.lng)
+    );
+
+    return distance <= 10;
+});
+filtered.sort((a, b) => {
+    if (!userLat || !userLng) return 0;
+
+    const d1 = getDistance(userLat, userLng, parseFloat(a.lat), parseFloat(a.lng));
+    const d2 = getDistance(userLat, userLng, parseFloat(b.lat), parseFloat(b.lng));
+
+    return d1 - d2;
+});
+            filtered.forEach(h => {
+                let statusClass, statusText;
+                const totalBeds = h.cardiac + h.neuro + h.surgical + h.neonatal + h.general;
+                let selectedType = document.getElementById('icu-type').value.toLowerCase();
+
+if (selectedType === 'all') selectedType = 'general';
+if (selectedType === 'trauma') selectedType = 'surgical';
+
+const currentBeds = h[selectedType];
+                const ratio = currentBeds / totalBeds;
+                const loadStatus = ratio > 0.8 ? "High Load" : ratio > 0.5 ? "Medium Load" : "Low Load";
+                
+                if (currentBeds === 0) {
+                    statusClass = 'status-red';
+                    statusText = 'Full';
+                } else if (ratio < 0.2) {
+                    statusClass = 'status-yellow';
+                    statusText = 'Limited';
+                } else {
+                    statusClass = 'status-green';
+                    statusText = 'Available';
+                }
+
+                let predictedChange = 0;
+                if (currentBeds === 0) predictedChange = Math.floor(Math.random() * 2); 
+                else if (currentBeds > totalBeds * 0.8) predictedChange = -(Math.floor(Math.random() * 3));
+                else predictedChange = (Math.random() > 0.5 ? 1 : -1);
+
+                const predicted = currentBeds + predictedChange;
+                const trendClass = predictedChange >= 0 ? 'trend-up' : 'trend-down';
+                const trendIcon = predictedChange >= 0 ? '↗' : '↘';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div>
+                            <div class="hospital-name">${h.name}</div>
+                            <div class="hospital-location">${h.location}</div>
+                        </div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="tags">
+                            ${h.specialization.split(',').map(s => `<span class="tag">${s}</span>`).join('')}
+                        </div>
+                        <div class="stat-row">
+                            <span>Beds Available:</span>
+                            <strong style="color: ${currentBeds > 0 ? 'var(--text-main)' : 'var(--danger)'}">
+                                ${currentBeds} / ${totalBeds}
+                            </strong>
+                        </div>
+                        <div class="prediction">
+                            <span>Prediction (30m): ${predicted} beds</span>
+                            <span class="${trendClass}">${trendIcon}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-reserve" ${currentBeds === 0 ? 'disabled' : ''} onclick="reserveBed(${h.id})">
+                            ${currentBeds === 0 ? 'Unavailable' : 'Reserve Bed (10 min Hold)'}
+                        </button>
+                        <button class="btn btn-ambulance" onclick="requestAmbulance('${h.name}')">
+                            Request Ambulance Only
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            updateMapMarkers(filtered);
+        }
+        
+        function updateMapMarkers(hospitals) {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+
+    hospitals.forEach(h => {
+        if (!h.lat || !h.lng) return;
+
+        const marker = L.marker([parseFloat(h.lat), parseFloat(h.lng)])
+            .addTo(map)
+            .bindPopup(`<b>${h.name}</b><br>${h.location}`);
+
+        markers.push(marker);
+    });
+    if (markers.length > 0) {
+    const group = L.featureGroup(markers);
+    if (!map._zoomInitialized) {
+    map.fitBounds(group.getBounds());
+    map._zoomInitialized = true;
+}
+}
+}
+
+        function findBestMatch() {
+            const input = document.getElementById('emergency-input').value.toLowerCase();
+            const typeSelect = document.getElementById('icu-type');
+            let target = typeSelect.value;
+
+            if (input.includes('heart') || input.includes('chest pain') || input.includes('attack')) {
+                target = 'Cardiac';
+                typeSelect.value = 'Cardiac';
+            } else if (input.includes('brain') || input.includes('stroke') || input.includes('head')) {
+                target = 'Neuro';
+                typeSelect.value = 'Neuro';
+            } else if (input.includes('accident') || input.includes('bleed') || input.includes('broken')) {
+                target = 'Trauma';
+                typeSelect.value = 'Trauma';
+            } else if (input.includes('baby') || input.includes('infant')) {
+                target = 'Neonatal';
+                typeSelect.value = 'Neonatal';
+            }
+
+            renderHospitals(target);
+            showToast(`Found matches for: ${target === 'All' ? 'All' : target + ' ICU'}`);
+        }
+
+       async function reserveBed(id) {
+    if (activeBooking) {
+        showToast("Finish current booking first.", true);
+        return;
+    }
+
+    const hospital = hospitals.find(h => h.id === id);
+    if (!hospital) return;
+
+   let selectedType = document.getElementById('icu-type').value.toLowerCase();
+
+if (selectedType === 'all') selectedType = 'general';
+if (selectedType === 'trauma') selectedType = 'surgical';
+
+const type = selectedType;
+
+await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${type}&change=-1`, {
+    method: "POST"
+});
+
+    await loadHospitals();
+
+    activeBooking = {
+        hospitalName: hospital.name,
+         type: type,
+        ambId: 'AMB-' + Math.floor(Math.random() * 9000 + 1000),
+        eta: Math.floor(Math.random() * 10 + 5),
+        startTime: Date.now(),
+        duration: 10 * 60 * 1000 
+    };
+
+    document.getElementById('booking-hospital').innerText = activeBooking.hospitalName;
+    document.getElementById('booking-amb-id').innerText = activeBooking.ambId;
+    document.getElementById('booking-eta').innerText = activeBooking.eta + " min";
+    document.getElementById('booking-panel').classList.add('active');
+
+    updateTimer();
+    bookingTimer = setInterval(updateTimer, 1000);
+}
+
+        
+        function updateTimer() {
+            if (!activeBooking) return;
+
+            const now = Date.now();
+            const elapsed = now - activeBooking.startTime;
+            const remaining = Math.max(0, activeBooking.duration - elapsed);
+
+            // Format mm:ss
+            const mins = Math.floor(remaining / 60000);
+            const secs = Math.floor((remaining % 60000) / 1000);
+            document.getElementById('hold-timer').innerText = 
+                `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+            // Progress Bar
+            const pct = (remaining / activeBooking.duration) * 100;
+            document.getElementById('booking-progress').style.width = pct + '%';
+
+            if (remaining <= 0) {
+                cancelBooking();
+            }
+        }
+
+        async function cancelBooking() {
+    if (!activeBooking) return;
+
+    const hospital = hospitals.find(h => h.name === activeBooking.hospitalName);
+
+    if (hospital) {
+        await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${activeBooking.type}&change=1`, {
+            method: "POST"
+        });
+    }
+
+    clearInterval(bookingTimer);
+    activeBooking = null;
+    document.getElementById('booking-panel').classList.remove('active');
+
+    await loadHospitals();
+    showToast("Booking expired or cancelled.");
+}
+
+       function requestAmbulance(hospitalName) {
+    showToast(`Ambulance dispatched to ${hospitalName}`);
+}
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.borderLeftColor = isError ? 'var(--danger)' : 'var(--success)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+       function logout() {
+    localStorage.clear();
+    window.location.href = "3.html";
+}
+    </script>
+</body>
+</html>
