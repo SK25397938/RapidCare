@@ -866,7 +866,8 @@ setTimeout(move, speed);
 async function loadHospitals() {
     try {
         const res = await fetch("https://rapidcare-production.up.railway.app/hospitals");
-        hospitals = await res.json();
+       hospitals = await res.json();
+renderHospitals(document.getElementById('icu-type').value);
     } catch (err) {
         console.error("Backend not running", err);
     }
@@ -878,11 +879,11 @@ async function checkIfDischarged() {
     const data = await res.json();
 
     const phone = localStorage.getItem("userPhone");
-const exists = data.find(p => p.hospital_id === selectedHospitalId && p.phone == phone);
+    const exists = data.find(p => p.phone == phone);
 
     if (!exists) {
-    cancelBooking();
-}
+        cancelBooking();
+    }
 }
 
 initMap();
