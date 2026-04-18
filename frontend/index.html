@@ -842,8 +842,6 @@ routeLine = L.polyline(coords, {
 
 map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
 
-animateAmbulance(coords);
-
 const duration = Math.round(data.routes[0].duration / 60);
 document.getElementById("booking-eta").innerText = duration + " min";
 }
@@ -858,7 +856,7 @@ function animateAmbulance(coords) {
         ambulanceMarker.setLatLng(coords[i]);
         i++;
 
-        const speed = Math.max(20, Math.min(100, coords.length / 5));
+        const speed = 200;
 setTimeout(move, speed);
     }
 
@@ -869,9 +867,6 @@ async function loadHospitals() {
     try {
         const res = await fetch("https://rapidcare-production.up.railway.app/hospitals");
         hospitals = await res.json();
-        if (!routeLine) {
-    renderHospitals(document.getElementById('icu-type').value);
-}
     } catch (err) {
         console.error("Backend not running", err);
     }
@@ -1018,16 +1013,16 @@ const currentBeds = h[selectedType];
 
     document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
 
-    const cards = document.querySelectorAll('.card');
-    const index = hospitals.findIndex(h => h.id === id);
-    if (cards[index]) {
-        cards[index].classList.add('selected');
+    document.querySelectorAll('.card').forEach(card => {
+    if (card.innerText.includes(hospital.name)) {
+        card.classList.add('selected');
     }
+});
 
     if (routeLine) map.removeLayer(routeLine);
     if (ambulanceMarker) map.removeLayer(ambulanceMarker);
 
-    setTimeout(() => drawRoute(hospital), 100);
+    drawRoute(hospital);
 }
 
 function updateMapMarkers(hospitals) {
@@ -1119,6 +1114,9 @@ await fetch(`https://rapidcare-production.up.railway.app/update-bed/${hospital.i
     document.getElementById('booking-amb-id').innerText = activeBooking.ambId;
     document.getElementById('booking-eta').innerText = activeBooking.eta + " min";
     document.getElementById('booking-panel').classList.add('active');
+    if (routeLine) {
+    animateAmbulance(routeLine.getLatLngs());
+}
 
     updateTimer();
     bookingTimer = setInterval(updateTimer, 1000);
