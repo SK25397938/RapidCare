@@ -804,6 +804,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
+let routeLine = null;
 let ambulanceMarker = null;
 
 const ambulanceIcon = L.icon({
@@ -962,6 +963,7 @@ const currentBeds = h[selectedType];
 
                 const card = document.createElement('div');
                 card.className = 'card' + (index === 0 ? ' nearest-hospital' : '');
+                card.onclick = () => selectHospital(h.id);
                 card.innerHTML = `
     <div class="card-header">
         <div>
@@ -987,24 +989,26 @@ const currentBeds = h[selectedType];
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-reserve" ${currentBeds === 0 ? 'disabled' : ''} onclick="openForm(${h.id})">
+                        <button class="btn btn-reserve" ${currentBeds === 0 ? 'disabled' : ''}onclick="event.stopPropagation(); openForm(${h.id})">
                             ${currentBeds === 0 ? 'Unavailable' : 'Reserve Bed (10 min Hold)'}
                         </button>
-                        <button class="btn btn-ambulance" onclick="requestAmbulance('${h.name}')">
+                        <button class="btn btn-ambulance"onclick="event.stopPropagation(); requestAmbulance('${h.name}')">
                             Request Ambulance Only
                         </button>
                     </div>
                 `;
                 container.appendChild(card);
             });
-           if (filtered.length > 0) {
-    const nearest = filtered[0];
-    drawRoute(nearest);
-}
             updateMapMarkers(filtered);
         }
-        
         let firstLoad = true;
+
+        function selectHospital(id) {
+    const hospital = hospitals.find(h => h.id === id);
+    if (!hospital) return;
+
+    drawRoute(hospital);
+}
 
 function updateMapMarkers(hospitals) {
     markers.forEach(m => map.removeLayer(m));
