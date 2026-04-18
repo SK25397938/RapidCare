@@ -465,8 +465,6 @@
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -804,9 +802,10 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
-let routingControl = null;
 
-function drawRoute(hospital) {
+let routeLine = null;
+
+async function drawRoute(hospital) {
     if (!userLat || !userLng) return;
 
     const lat1 = userLat;
@@ -814,29 +813,27 @@ function drawRoute(hospital) {
     const lat2 = parseFloat(hospital.lat);
     const lng2 = parseFloat(hospital.lng);
 
-    if (routingControl) {
-        map.removeControl(routingControl);
+    if (routeLine) {
+        map.removeLayer(routeLine);
     }
 
-    routingControl = L.Routing.control({
-    waypoints: [
-        L.latLng(lat1, lng1),
-        L.latLng(lat2, lng2)
-    ],
-    routeWhileDragging: false,
-    addWaypoints: false,
-    draggableWaypoints: false,
-    showAlternatives: false,
-    containerClassName: 'hidden-routing',
-    createMarker: () => null,
-    lineOptions: {
-        styles: [{ color: 'blue', weight: 5 }]
-    }
-}).addTo(map);
+    const res = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`
+    );
 
-    routingControl.on('routesfound', function() {
-        map.fitBounds(routingControl.getBounds(), { padding: [50, 50] });
-    });
+    const data = await res.json();
+
+    const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+
+    routeLine = L.polyline(coords, {
+        color: "blue",
+        weight: 5
+    }).addTo(map);
+
+    map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+
+    const duration = Math.round(data.routes[0].duration / 60);
+    document.getElementById("booking-eta").innerText = duration + " min";
 }
 
 async function loadHospitals() {
