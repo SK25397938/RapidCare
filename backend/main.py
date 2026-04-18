@@ -11,9 +11,6 @@ class PatientCreate(BaseModel):
     age: str
     gender: str
     phone: str
-    relative: str | None = None
-    relation: str | None = None
-    witness: str | None = None
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()

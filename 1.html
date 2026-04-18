@@ -408,20 +408,23 @@
 
         .modal-content {
             background: white;
-            padding: 20px;
-            width: 400px;
-            border-radius: 10px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
             position: relative;
         }
 
         .modal-close {
             position: absolute;
-            top: 10px;
-            right: 12px;
+            top: 15px;
+            right: 15px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
+            color: var(--text-muted);
         }
+        .modal-close:hover { color: var(--danger); }
 
         #map {
             z-index: 1;
@@ -450,6 +453,15 @@
         .hidden-routing {
             display: none;
         }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -467,7 +479,7 @@
                 <p>Find ICU Care Instantly</p>
             </div>
         </div>
-        <button onclick="logout()" style="margin-left:20px; padding:6px 12px; cursor:pointer;">
+        <button onclick="logout()" style="margin-left:20px; padding:6px 12px; cursor:pointer; border:1px solid #ddd; background:white; border-radius:4px;">
          Logout
         </button>
     </header>
@@ -511,7 +523,7 @@
     <div id="booking-panel" class="booking-panel">
         <div class="booking-header">
             <h3>Bed Reserved Successfully</h3>
-            <button onclick="cancelBooking()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+            <button onclick="cancelBooking()" style="background:none; border:none; color:white; cursor:pointer; font-size:1.2rem;">✕</button>
         </div>
         <div class="timer-display" id="hold-timer">10:00</div>
         <p style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 1rem;">Hold Time Remaining</p>
@@ -598,7 +610,7 @@ async function submitForm() {
     const witness = document.getElementById("p-witness").value;
 
     if (!name || !age || !phone) {
-        alert("Fill all details");
+        alert("Please fill mandatory details (Name, Age, Phone)");
         return;
     }
 
@@ -700,13 +712,13 @@ doc.setFont("helvetica", "normal");
 doc.setFontSize(10);
 doc.setTextColor(30, 30, 30);
 
-const consentText = `I, the undersigned, being the patient's relative/guardian, hereby certify that I have been clearly informed by the treating doctor or medical team regarding the serious and high-risk nature of the patient's condition and the proposed treatment or surgery.
+const consentText = `I, the undersigned, certify that I am the patient's relative/guardian. I have been clearly informed by the treating doctor or medical team about the serious and high-risk nature of the patient's condition and the proposed treatment or surgery.
 
-I acknowledge that the treatment or surgical procedure is essential due to the critical condition of the patient.
+I understand that the treatment or surgical procedure is essential due to the critical condition of the patient.
 
-I have been informed about the potential risks involved, which may include, but are not limited to, severe infection, heavy bleeding, organ failure (lungs, kidneys, heart), temporary or permanent disability, adverse drug reactions, the need for ICU care or life support, and even death despite all best efforts.
+I have been informed about potential risks which may include severe infection, heavy bleeding, organ failure (lungs, kidneys, heart), temporary or permanent disability, adverse drug reactions, need for ICU care or life support, and even death despite all efforts.
 
-I am also aware of the alternative treatment options available, including the option of no treatment, along with their associated risks and benefits.
+I have also been informed about alternative treatment options, including the option of no treatment, along with their associated risks.
 
 I have had the opportunity to ask questions, and all my doubts have been satisfactorily clarified. I fully understand the risks involved and voluntarily give my informed consent to proceed with the treatment.`;
 
@@ -716,48 +728,52 @@ yPos += (splitText.length * 4.5) + 15;
 
 doc.setDrawColor(220, 220, 220);
 doc.setLineWidth(0.5);
-doc.rect(margin - 2, yPos - 5, contentWidth + 4, 70);
+doc.rect(margin - 2, yPos - 5, contentWidth + 4, 65);
 
 yPos += 5;
 
 doc.setFont("helvetica", "bold");
-doc.setFontSize(10);
+doc.setFontSize(11);
 doc.setTextColor(15, 23, 42);
 doc.text("SIGNATURES", margin, yPos);
 yPos += 10;
 
 doc.setFont("helvetica", "normal");
 doc.setFontSize(9);
+const startX = margin + 5;
+const midX = pageWidth / 2;
+const endX = pageWidth - margin;
 
-doc.text("Name of Relative:", margin, yPos);
-doc.text(relative, margin + 40, yPos);
-doc.line(margin + 40, yPos + 1, margin + 100, yPos + 1);
+doc.text("Relative Name:", startX, yPos);
+doc.text(relative || "-", startX + 45, yPos);
 
-doc.text("Signature:", margin + 110, yPos);
-doc.line(margin + 140, yPos + 1, pageWidth - margin, yPos + 1);
-yPos += 10;
+doc.text("Relationship:", startX, yPos + 10);
+doc.text(relation || "-", startX + 45, yPos + 10);
 
-doc.text("Relationship:", margin, yPos);
-doc.text(relation, margin + 40, yPos);
-doc.line(margin + 40, yPos + 1, margin + 100, yPos + 1);
-yPos += 10;
+doc.text("Signature:", startX, yPos + 20);
+doc.line(startX + 45, yPos + 21, startX + 110, yPos + 21);
 
-doc.text("Name of Witness:", margin, yPos);
-doc.text(witness, margin + 40, yPos);
-doc.line(margin + 40, yPos + 1, margin + 100, yPos + 1);
+doc.text("Witness Name:", midX, yPos);
+doc.text(witness || "-", midX + 45, yPos);
 
-doc.text("Signature:", margin + 110, yPos);
-doc.line(margin + 140, yPos + 1, pageWidth - margin, yPos + 1);
+doc.text("Signature:", midX, yPos + 10);
+doc.line(midX + 45, yPos + 11, endX, yPos + 11);
+
+yPos += 35;
+
+doc.setDrawColor(200, 200, 200);
+doc.line(startX, yPos, endX, yPos);
+yPos += 8;
 
 doc.setFont("helvetica", "bold");
-doc.text("Date:", margin, yPos);
+doc.text("Date:", startX, yPos);
 doc.setFont("helvetica", "normal");
-doc.line(margin + 15, yPos + 1, margin + 60, yPos + 1);
+doc.line(startX + 15, yPos + 1, startX + 60, yPos + 1);
 
 doc.setFont("helvetica", "bold");
-doc.text("Place:", margin + 80, yPos);
+doc.text("Place:", midX, yPos);
 doc.setFont("helvetica", "normal");
-doc.line(margin + 100, yPos + 1, pageWidth - margin, yPos + 1);
+doc.line(midX + 15, yPos + 1, endX, yPos + 1);
 
 doc.save("RapidCare_Consent_Form.pdf");
 
@@ -766,7 +782,7 @@ doc.save("RapidCare_Consent_Form.pdf");
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             hospital_id: selectedHospitalId,
-            name, age, gender, phone, email: localStorage.getItem("email")
+            name, age, gender, phone,
         })
     });
 
@@ -963,12 +979,6 @@ const currentBeds = h[selectedType];
             });
            if (filtered.length > 0) {
     const nearest = filtered[0];
-
-    if (!window.hasZoomed) {
-        map.setView([parseFloat(nearest.lat), parseFloat(nearest.lng)], 14);
-        window.hasZoomed = true;
-    }
-
     drawRoute(nearest);
 }
             updateMapMarkers(filtered);
@@ -1126,31 +1136,69 @@ await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${type}&change
     window.location.href = "3.html";
 }
     </script>
-  <div id="patient-modal" class="modal">
-<div class="modal-content">
+   <div id="patient-modal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">✖</span>
 
-<span class="modal-close" onclick="closeModal()">✖</span>
+        <h3 style="margin-bottom:20px; color:var(--text-main);">Patient Details</h3>
 
-<h3>Patient Details</h3>
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Patient Name</label>
+                <input id="p-name" placeholder="Enter patient name" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+            <div class="input-group">
+                <label>Age</label>
+                <input id="p-age" type="number" placeholder="Enter age" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+        </div>
 
-<input id="p-name" placeholder="Name" style="width:100%;margin-bottom:10px;">
-<input id="p-age" placeholder="Age" type="number" style="width:100%;margin-bottom:10px;">
-<select id="p-gender" style="width:100%;margin-bottom:10px;">
-<option>Male</option>
-<option>Female</option>
-<option>Other</option>
-</select>
-<input id="p-phone" placeholder="Phone" style="width:100%;margin-bottom:15px;">
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Gender</label>
+                <select id="p-gender" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="">Select Gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Phone Number</label>
+                <input id="p-phone" placeholder="Enter phone number" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+        </div>
 
-<h3>Consent Details</h3>
+        <div style="border-top: 1px solid #eee; margin: 15px 0;"></div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">Consent Details (Optional for PDF)</p>
 
-<input id="p-relative" placeholder="Relative Name" style="width:100%;margin-bottom:10px;">
-<input id="p-relation" placeholder="Relationship" style="width:100%;margin-bottom:10px;">
-<input id="p-witness" placeholder="Witness Name" style="width:100%;margin-bottom:15px;">
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Relative Name</label>
+                <input id="p-relative" placeholder="Relative's Name" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+            <div class="input-group">
+                <label>Relationship</label>
+                <input id="p-relation" placeholder="e.g. Father, Spouse" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+            </div>
+        </div>
+        
+        <div class="input-group" style="margin-bottom:15px;">
+            <label>Witness Name</label>
+            <input id="p-witness" placeholder="Witness's Name" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+        </div>
 
-<button onclick="submitForm()" style="width:100%;">Submit</button>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="submitForm()" style="flex:1; padding:12px; background:#0284c7; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+                Submit & Generate PDF
+            </button>
 
-</div>
+            <button onclick="closeModal()" style="flex:1; padding:12px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer; font-weight:600;">
+                Cancel
+            </button>
+        </div>
+
+    </div>
 </div>
 </body>
 </html>

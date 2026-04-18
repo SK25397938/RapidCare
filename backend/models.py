@@ -33,3 +33,7 @@ class Patient(Base):
     age = Column(String)
     gender = Column(String)
     phone = Column(String)
+
+    relative = Column(String)
+    relation = Column(String)
+    witness = Column(String)
