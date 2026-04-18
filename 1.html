@@ -777,7 +777,7 @@ doc.line(midX + 15, yPos + 1, endX, yPos + 1);
 
 doc.save("RapidCare_Consent_Form.pdf");
 
-    await fetch("http://127.0.0.1:8000/add-patient", {
+    await fetch("https://rapidcare-production.up.railway.app/add-patient", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -841,7 +841,7 @@ function drawRoute(hospital) {
 
 async function loadHospitals() {
     try {
-        const res = await fetch("http://127.0.0.1:8000/hospitals");
+        const res = await fetch("https://rapidcare-production.up.railway.app/hospitals");
         hospitals = await res.json();
         renderHospitals(document.getElementById('icu-type').value);
     } catch (err) {
@@ -1056,7 +1056,7 @@ if (selectedType === 'trauma') selectedType = 'surgical';
 
 const type = selectedType;
 
-await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${type}&change=-1`, {
+await fetch(`https://rapidcare-production.up.railway.app/update-bed/${hospital.id}?type=${type}&change=-1`, {
     method: "POST"
 });
 
@@ -1107,7 +1107,7 @@ await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${type}&change
     const hospital = hospitals.find(h => h.name === activeBooking.hospitalName);
 
     if (hospital) {
-        await fetch(`http://127.0.0.1:8000/update-bed/${hospital.id}?type=${activeBooking.type}&change=1`, {
+        await fetch(`https://rapidcare-production.up.railway.app/update-bed/${hospital.id}?type=${activeBooking.type}&change=1`, {
             method: "POST"
         });
     }

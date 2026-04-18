@@ -499,7 +499,7 @@
     async function discharge(id) {
         if(!confirm("Are you sure you want to discharge this patient?")) return;
 
-        await fetch(`http://127.0.0.1:8000/patient/${id}`, {
+        await fetch(`https://rapidcare-production.up.railway.app/patient/${id}`, {
             method: "DELETE"
         });
 
@@ -510,7 +510,7 @@
 
     async function loadHospitals() {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/admin-hospital?email=${email}`);
+            const res = await fetch(`https://rapidcare-production.up.railway.app/admin-hospital?email=${email}`);
             const data = await res.json();
 
             if (!data || data.error) {
@@ -528,7 +528,7 @@
 
     async function loadPatients() {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/patients?email=${email}`);
+            const res = await fetch(`https://rapidcare-production.up.railway.app/patients?email=${email}`);
             const data = await res.json();
 
             const tbody = document.querySelector("#patient-table tbody");
@@ -698,7 +698,7 @@
 
     async function updateBed(hid, type, delta) {
         try {
-            await fetch(`http://127.0.0.1:8000/update-bed/${hid}?type=${type.toLowerCase()}&change=${delta}`, {
+            await fetch(`https://rapidcare-production.up.railway.app/update-bed/${hid}?type=${type.toLowerCase()}&change=${delta}`, {
                 method: "POST"
             });
             loadHospitals();
@@ -709,7 +709,7 @@
 
     async function updateAmbulance(hid, delta) {
         try {
-            await fetch(`http://127.0.0.1:8000/update-ambulance/${hid}?change=${delta}`, {
+            await fetch(`https://rapidcare-production.up.railway.app/update-ambulance/${hid}?change=${delta}`, {
                 method: "POST"
             });
             loadHospitals();
@@ -753,7 +753,7 @@
         return;
     }
 
-    await fetch("http://127.0.0.1:8000/add-patient", {
+    await fetch("https://rapidcare-production.up.railway.app/add-patient", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
