@@ -280,17 +280,47 @@
 
     function handleUserLogin(e) {
     e.preventDefault();
+
+    const email = document.querySelector("#form-user-login input[type='email']").value;
+    const password = document.querySelector("#form-user-login input[type='password']").value;
+
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+
+    const user = users.find(u => u.email === email && u.password === password);
+
+    if (!user) {
+        alert("Invalid credentials. Please sign up first.");
+        return;
+    }
+
     localStorage.setItem("role", "user");
+    localStorage.setItem("currentUser", JSON.stringify(user));
+
     window.location.href = "index.html";
-   } 
+}
 
     function handleUserSignup(e) {
-        e.preventDefault();
-        const name = document.getElementById('signup-name').value;
-        const surname = document.getElementById('signup-surname').value;
-        alert(`Account created for ${name} ${surname}. Please login.`);
-        switchUserMode('login');
+    e.preventDefault();
+
+    const name = document.getElementById('signup-name').value;
+    const surname = document.getElementById('signup-surname').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-pass').value;
+
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+
+    const exists = users.find(u => u.email === email);
+    if (exists) {
+        alert("User already exists. Please login.");
+        return;
     }
+
+    users.push({ name, surname, email, password });
+    localStorage.setItem("users", JSON.stringify(users));
+
+    alert("Account created. Please login.");
+    switchUserMode('login');
+}
 
     function handleAdminLogin(e) {
         e.preventDefault();
