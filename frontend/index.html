@@ -579,7 +579,8 @@ navigator.geolocation.getCurrentPosition(pos => {
 
     L.marker([userLat, userLng], { icon: userIcon })
         .addTo(map)
-        .bindPopup("You are here");
+        .bindPopup("You are here")
+        .openPopup();
 
     map.setView([userLat, userLng], 13);
 });
@@ -803,37 +804,59 @@ function getDistance(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-let routeLine = null;
+let ambulanceMarker = null;
+
+const ambulanceIcon = L.icon({
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/2967/2967350.png",
+    iconSize: [32, 32]
+});
 
 async function drawRoute(hospital) {
     if (!userLat || !userLng) return;
 
-    const lat1 = userLat;
-    const lng1 = userLng;
-    const lat2 = parseFloat(hospital.lat);
-    const lng2 = parseFloat(hospital.lng);
+const lat1 = userLat;
+const lng1 = userLng;
+const lat2 = parseFloat(hospital.lat);
+const lng2 = parseFloat(hospital.lng);
 
-    if (routeLine) {
-        map.removeLayer(routeLine);
+if (routeLine) map.removeLayer(routeLine);
+if (ambulanceMarker) map.removeLayer(ambulanceMarker);
+
+const res = await fetch(
+    `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`
+);
+
+const data = await res.json();
+
+const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+
+routeLine = L.polyline(coords, {
+    color: "blue",
+    weight: 5
+}).addTo(map);
+
+map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+
+animateAmbulance(coords);
+
+const duration = Math.round(data.routes[0].duration / 60);
+document.getElementById("booking-eta").innerText = duration + " min";
+}
+function animateAmbulance(coords) {
+    let i = 0;
+
+    ambulanceMarker = L.marker(coords[0], { icon: ambulanceIcon }).addTo(map);
+
+    function move() {
+        if (i >= coords.length) return;
+
+        ambulanceMarker.setLatLng(coords[i]);
+        i++;
+
+        setTimeout(move, 40);
     }
 
-    const res = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`
-    );
-
-    const data = await res.json();
-
-    const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-
-    routeLine = L.polyline(coords, {
-        color: "blue",
-        weight: 5
-    }).addTo(map);
-
-    map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
-
-    const duration = Math.round(data.routes[0].duration / 60);
-    document.getElementById("booking-eta").innerText = duration + " min";
+    move();
 }
 
 async function loadHospitals() {
