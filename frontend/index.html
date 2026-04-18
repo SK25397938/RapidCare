@@ -462,6 +462,10 @@
         .full-width {
             grid-column: span 2;
         }
+        .selected {
+    border: 2px solid #0284c7;
+    box-shadow: 0 0 15px rgba(2, 132, 199, 0.4);
+}
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -854,7 +858,8 @@ function animateAmbulance(coords) {
         ambulanceMarker.setLatLng(coords[i]);
         i++;
 
-        setTimeout(move, 40);
+        const speed = Math.max(20, Math.min(100, coords.length / 5));
+setTimeout(move, speed);
     }
 
     move();
@@ -1010,6 +1015,14 @@ const currentBeds = h[selectedType];
         function selectHospital(id) {
     const hospital = hospitals.find(h => h.id === id);
     if (!hospital) return;
+
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+
+    const cards = document.querySelectorAll('.card');
+    const index = hospitals.findIndex(h => h.id === id);
+    if (cards[index]) {
+        cards[index].classList.add('selected');
+    }
 
     if (routeLine) map.removeLayer(routeLine);
     if (ambulanceMarker) map.removeLayer(ambulanceMarker);
