@@ -864,7 +864,9 @@ async function loadHospitals() {
     try {
         const res = await fetch("https://rapidcare-production.up.railway.app/hospitals");
         hospitals = await res.json();
-        renderHospitals(document.getElementById('icu-type').value);
+        if (!routeLine) {
+    renderHospitals(document.getElementById('icu-type').value);
+}
     } catch (err) {
         console.error("Backend not running", err);
     }
@@ -999,7 +1001,9 @@ const currentBeds = h[selectedType];
                 `;
                 container.appendChild(card);
             });
-            updateMapMarkers(filtered);
+            if (!routeLine) {
+    updateMapMarkers(filtered);
+}
         }
         let firstLoad = true;
 
@@ -1007,7 +1011,10 @@ const currentBeds = h[selectedType];
     const hospital = hospitals.find(h => h.id === id);
     if (!hospital) return;
 
-    drawRoute(hospital);
+    if (routeLine) map.removeLayer(routeLine);
+    if (ambulanceMarker) map.removeLayer(ambulanceMarker);
+
+    setTimeout(() => drawRoute(hospital), 100);
 }
 
 function updateMapMarkers(hospitals) {
@@ -1034,11 +1041,11 @@ function updateMapMarkers(hospitals) {
         markers.push(marker);
     });
 
-    if (markers.length > 0 && firstLoad) {
-        const group = L.featureGroup(markers);
-        map.fitBounds(group.getBounds(), { padding: [50, 50] });
-        firstLoad = false;
-    }
+    if (markers.length > 0 && firstLoad && !routeLine) {
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds(), { padding: [50, 50] });
+    firstLoad = false;
+}
 }
 
         function findBestMatch() {
